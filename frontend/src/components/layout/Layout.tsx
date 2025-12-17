@@ -1,6 +1,7 @@
 import { Link, useLocation, Outlet } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
 import { useLogout } from '@/hooks/useAuth'
+import { useTheme } from '@/hooks/useTheme'
 import { Button } from '@/components/ui/button'
 import {
   LayoutDashboard,
@@ -11,7 +12,9 @@ import {
   Shield,
   ScanSearch,
   MessageSquare,
-  BarChart3
+  BarChart3,
+  Sun,
+  Moon
 } from 'lucide-react'
 
 const navItems = [
@@ -28,6 +31,7 @@ export function Layout() {
   const location = useLocation()
   const { user } = useAuthStore()
   const { logout } = useLogout()
+  const { theme, toggleTheme } = useTheme()
 
   return (
     <div className="min-h-screen bg-background">
@@ -63,9 +67,24 @@ export function Layout() {
           </nav>
 
           {/* User section */}
-          <div className="border-t p-4">
-            <div className="mb-3 text-sm">
-              <p className="font-medium">{user?.email || 'Not logged in'}</p>
+          <div className="border-t p-4 space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-sm flex-1 min-w-0">
+                <p className="font-medium truncate">{user?.email || 'Not logged in'}</p>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleTheme}
+                className="h-8 w-8 p-0"
+                title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+              >
+                {theme === 'light' ? (
+                  <Moon className="h-4 w-4" />
+                ) : (
+                  <Sun className="h-4 w-4" />
+                )}
+              </Button>
             </div>
             <Button variant="outline" size="sm" className="w-full" onClick={logout}>
               <LogOut className="mr-2 h-4 w-4" />

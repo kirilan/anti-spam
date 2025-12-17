@@ -88,9 +88,12 @@ def scan_for_responses_task(self, user_id: str, days_back: int = 7):
     Returns:
         Dict with scan results including responses found and requests updated
     """
+    import logging
+    logger = logging.getLogger(__name__)
     db = SessionLocal()
 
     try:
+        logger.info(f"Starting response scan for user {user_id}")
         # Get user
         user = db.query(User).filter(User.id == user_id).first()
         if not user:
@@ -149,6 +152,7 @@ def scan_for_responses_task(self, user_id: str, days_back: int = 7):
 
         # Build Gmail query for emails from broker domains
         # Search for emails received after the oldest sent request
+        logger.info(f"Building search query for {len(broker_domains)} broker domains")
         oldest_sent = min(req.sent_at for req in sent_requests if req.sent_at)
         after_date = oldest_sent.strftime('%Y/%m/%d') if oldest_sent else (
             (datetime.now() - timedelta(days=days_back)).strftime('%Y/%m/%d')
@@ -157,9 +161,12 @@ def scan_for_responses_task(self, user_id: str, days_back: int = 7):
         # Query: from any broker domain, after the sent date, in inbox
         domain_queries = ' OR '.join(f'from:@{domain}' for domain in broker_domains)
         query = f'({domain_queries}) after:{after_date} in:inbox'
+        logger.info(f"Gmail query: {query}")
 
         # Fetch messages
+        logger.info("Fetching messages from Gmail API")
         messages = gmail_service.search_messages(user, query, max_results=50)
+        logger.info(f"Found {len(messages)} messages to process")
 
         responses_created = 0
         requests_updated = 0
@@ -186,8 +193,8 @@ def scan_for_responses_task(self, user_id: str, days_back: int = 7):
             if existing:
                 continue
 
-            # Extract email details
-            headers = msg_data.get('payload', {}).get('headers', {})
+            # Extract email details using proper header parsing
+            headers = gmail_service.get_message_headers(msg_data)
             sender = headers.get('from', '')
             subject = headers.get('subject', '')
             date_str = headers.get('date', '')
@@ -246,6 +253,7 @@ def scan_for_responses_task(self, user_id: str, days_back: int = 7):
         # Commit all changes
         db.commit()
 
+        logger.info(f"Response scan completed: {responses_created} responses, {requests_updated} requests updated")
         return {
             'status': 'completed',
             'responses_found': responses_created,
@@ -255,11 +263,18 @@ def scan_for_responses_task(self, user_id: str, days_back: int = 7):
         }
 
     except Exception as e:
+        logger.error(f"Response scan failed for user {user_id}: {type(e).__name__}: {str(e)}", exc_info=True)
+        error_msg = f"{type(e).__name__}: {str(e)}"
         self.update_state(
             state='FAILURE',
-            meta={'error': str(e)}
+            meta={'error': error_msg}
         )
-        raise
+        # Return error dict instead of raising to avoid Celery serialization issues
+        return {
+            'status': 'failed',
+            'error': error_msg,
+            'user_id': user_id
+        }
 
     finally:
         db.close()

@@ -1,8 +1,12 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { useBrokers } from '@/hooks/useBrokers'
+import { useCreateRequest } from '@/hooks/useRequests'
 import { Broker } from '@/types'
-import { Database, Globe, Mail, Loader2, AlertTriangle } from 'lucide-react'
+import { Database, Globe, Mail, Loader2, AlertTriangle, FileText } from 'lucide-react'
 
 export function BrokerList() {
   const { data: brokers, isLoading, error } = useBrokers()
@@ -54,6 +58,22 @@ export function BrokerList() {
 }
 
 function BrokerCard({ broker }: { broker: Broker }) {
+  const navigate = useNavigate()
+  const createRequest = useCreateRequest()
+  const [isCreating, setIsCreating] = useState(false)
+
+  const handleCreateRequest = async () => {
+    setIsCreating(true)
+    try {
+      await createRequest.mutateAsync(broker.id)
+      navigate('/requests')
+    } catch (error) {
+      console.error('Failed to create request:', error)
+    } finally {
+      setIsCreating(false)
+    }
+  }
+
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -108,6 +128,25 @@ function BrokerCard({ broker }: { broker: Broker }) {
             </div>
           </div>
         )}
+        <div className="pt-3 border-t">
+          <Button
+            className="w-full"
+            onClick={handleCreateRequest}
+            disabled={isCreating}
+          >
+            {isCreating ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Creating...
+              </>
+            ) : (
+              <>
+                <FileText className="mr-2 h-4 w-4" />
+                Create Deletion Request
+              </>
+            )}
+          </Button>
+        </div>
       </CardContent>
     </Card>
   )

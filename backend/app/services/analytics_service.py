@@ -248,7 +248,7 @@ class AnalyticsService:
             user_id: User ID
 
         Returns:
-            List of dicts with response_type and count
+            List of dicts with response_type, count, and percentage
         """
         results = (
             self.db.query(
@@ -260,10 +260,18 @@ class AnalyticsService:
             .all()
         )
 
+        # Calculate total for percentage
+        total = sum(row.count for row in results)
+
+        # Avoid division by zero
+        if total == 0:
+            return []
+
         return [
             {
                 'response_type': row.response_type.value,
-                'count': row.count
+                'count': row.count,
+                'percentage': round((row.count / total) * 100, 1)
             }
             for row in results
         ]

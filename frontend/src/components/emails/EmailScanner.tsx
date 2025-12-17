@@ -13,8 +13,8 @@ export function EmailScanner() {
   const [taskId, setTaskId] = useState<string | null>(null)
   const [taskStatus, setTaskStatus] = useState<TaskStatus | null>(null)
   const [isStarting, setIsStarting] = useState(false)
-  const [daysBack, setDaysBack] = useState(90)
-  const [maxEmails, setMaxEmails] = useState(100)
+  const [daysBack, setDaysBack] = useState(30)
+  const [maxEmails, setMaxEmails] = useState(300)
 
   // Poll for task status
   useEffect(() => {

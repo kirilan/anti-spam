@@ -3,13 +3,14 @@ import { emailsApi, tasksApi } from '@/services/api'
 import { useAuthStore } from '@/stores/authStore'
 import type { ScanRequest } from '@/types'
 
-export function useEmailScans(brokerOnly = false, limit = 100) {
+export function useEmailScans(brokerOnly = false, limit = 1000) {
   const { userId } = useAuthStore()
 
   return useQuery({
     queryKey: ['emailScans', userId, brokerOnly, limit],
     queryFn: () => emailsApi.getScans(userId!, brokerOnly, limit),
     enabled: !!userId,
+    staleTime: 0, // Always refetch to get latest data
   })
 }
 

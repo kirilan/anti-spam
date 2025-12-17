@@ -29,7 +29,7 @@ class ResponseDetector:
     ]
 
     ACKNOWLEDGMENT_KEYWORDS = [
-        'received your request', 'processing your request',
+        'acknowledged', 'acknowledge', 'received your request', 'processing your request',
         'reviewing your request', 'working on your request',
         'will process', 'will review', 'in progress',
         'under review', 'being processed', 'ticket created',

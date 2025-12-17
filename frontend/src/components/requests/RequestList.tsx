@@ -2,8 +2,9 @@ import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { useRequests, useCreateRequest, useUpdateRequestStatus } from '@/hooks/useRequests'
+import { useRequests, useCreateRequest } from '@/hooks/useRequests'
 import { useEmailScans } from '@/hooks/useEmails'
+import { useBrokers } from '@/hooks/useBrokers'
 import { DeletionRequest, EmailScan } from '@/types'
 import { EmailPreviewDialog } from './EmailPreviewDialog'
 import {
@@ -15,18 +16,22 @@ import {
   CheckCircle,
   Plus,
   Eye,
-  Send
+  Send,
+  Calendar
 } from 'lucide-react'
 
 export function RequestList() {
   const { data: requests, isLoading, error, refetch } = useRequests()
   const { data: brokerEmails } = useEmailScans(true)
+  const { data: brokers } = useBrokers()
   const createRequest = useCreateRequest()
-  const updateStatus = useUpdateRequestStatus()
   const [previewRequest, setPreviewRequest] = useState<DeletionRequest | null>(null)
   const [creatingFor, setCreatingFor] = useState<string | null>(null)
   const [sendingRequestId, setSendingRequestId] = useState<string | null>(null)
   const [permissionError, setPermissionError] = useState(false)
+
+  // Create a map of broker IDs to broker names for quick lookup
+  const brokerMap = new Map(brokers?.map(b => [b.id, b.name]) || [])
 
   const handleCreateRequest = async (brokerId: string) => {
     setCreatingFor(brokerId)
@@ -35,10 +40,6 @@ export function RequestList() {
     } finally {
       setCreatingFor(null)
     }
-  }
-
-  const handleStatusUpdate = async (requestId: string, status: 'sent' | 'confirmed') => {
-    await updateStatus.mutateAsync({ requestId, status })
   }
 
   const handleSendEmail = async (requestId: string) => {
@@ -148,8 +149,8 @@ export function RequestList() {
             <RequestCard
               key={request.id}
               request={request}
+              brokerName={brokerMap.get(request.broker_id) || 'Unknown Broker'}
               onPreview={() => setPreviewRequest(request)}
-              onStatusUpdate={handleStatusUpdate}
               onSendEmail={handleSendEmail}
               isSending={sendingRequestId === request.id}
             />
@@ -212,14 +213,14 @@ export function RequestList() {
 
 function RequestCard({
   request,
+  brokerName,
   onPreview,
-  onStatusUpdate,
   onSendEmail,
   isSending
 }: {
   request: DeletionRequest
+  brokerName: string
   onPreview: () => void
-  onStatusUpdate: (requestId: string, status: 'sent' | 'confirmed') => void
   onSendEmail: (requestId: string) => void
   isSending: boolean
 }) {
@@ -232,23 +233,42 @@ function RequestCard({
   const config = statusConfig[request.status as keyof typeof statusConfig] || statusConfig.pending
   const StatusIcon = config.icon
 
+  const formatDate = (dateStr: string | null) => {
+    if (!dateStr) return null
+    return new Date(dateStr).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
+
   return (
     <Card>
       <CardContent className="pt-6">
         <div className="flex items-start justify-between">
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <div className="flex items-center gap-2">
               <Badge variant="outline" className={config.bg}>
                 <StatusIcon className={`h-3 w-3 mr-1 ${config.color}`} />
                 {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
               </Badge>
             </div>
-            <p className="text-sm text-muted-foreground">
-              Broker ID: {request.broker_id}
+            <p className="text-sm font-medium">
+              {brokerName}
             </p>
-            <p className="text-xs text-muted-foreground">
-              Created: {new Date(request.created_at).toLocaleDateString()}
-            </p>
+            {request.sent_at && (
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Calendar className="h-3 w-3" />
+                <span>Sent: {formatDate(request.sent_at)}</span>
+              </div>
+            )}
+            {!request.sent_at && (
+              <p className="text-xs text-muted-foreground">
+                Created: {new Date(request.created_at).toLocaleDateString()}
+              </p>
+            )}
           </div>
 
           <div className="flex gap-2">
@@ -274,16 +294,6 @@ function RequestCard({
                     Send Email
                   </>
                 )}
-              </Button>
-            )}
-
-            {request.status === 'sent' && (
-              <Button
-                size="sm"
-                variant="default"
-                onClick={() => onStatusUpdate(request.id, 'confirmed')}
-              >
-                Mark Confirmed
               </Button>
             )}
           </div>

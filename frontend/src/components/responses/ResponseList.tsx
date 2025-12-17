@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -12,7 +12,8 @@ import {
   HelpCircle,
   Loader2,
   RefreshCw,
-  Mail
+  Mail,
+  CheckCircle2
 } from 'lucide-react'
 
 const responseTypeConfig: Record<BrokerResponseType, { icon: any; color: string; bg: string; label: string }> = {
@@ -25,11 +26,41 @@ const responseTypeConfig: Record<BrokerResponseType, { icon: any; color: string;
 
 export function ResponseList() {
   const [filterType, setFilterType] = useState<BrokerResponseType | 'all'>('all')
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const [showSuccess, setShowSuccess] = useState(false)
   const { data: responses, isLoading, error } = useResponses()
   const scanResponses = useScanResponses()
 
+  // Set initial last updated time when responses load
+  useEffect(() => {
+    if (responses && responses.length > 0 && !lastUpdated) {
+      setLastUpdated(new Date())
+    }
+  }, [responses, lastUpdated])
+
   const handleScan = async () => {
-    await scanResponses.mutateAsync(7)
+    try {
+      await scanResponses.mutateAsync(7)
+      setLastUpdated(new Date())
+      setShowSuccess(true)
+      setTimeout(() => setShowSuccess(false), 3000) // Hide after 3 seconds
+    } catch (error) {
+      console.error('Scan failed:', error)
+    }
+  }
+
+  const formatLastUpdated = (date: Date | null) => {
+    if (!date) return ''
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffSecs = Math.floor(diffMs / 1000)
+    const diffMins = Math.floor(diffSecs / 60)
+
+    if (diffSecs < 10) return 'Just now'
+    if (diffSecs < 60) return `${diffSecs} seconds ago`
+    if (diffMins === 1) return '1 minute ago'
+    if (diffMins < 60) return `${diffMins} minutes ago`
+    return date.toLocaleTimeString()
   }
 
   const filteredResponses = responses?.filter(
@@ -63,42 +94,74 @@ export function ResponseList() {
       </div>
 
       {/* Actions Bar */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={handleScan}
-            disabled={scanResponses.isPending}
-            variant="default"
-          >
-            {scanResponses.isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Scanning...
-              </>
-            ) : (
-              <>
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Scan for Responses
-              </>
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={handleScan}
+              disabled={scanResponses.isPending}
+              variant="default"
+            >
+              {scanResponses.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Scanning...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Scan for Responses
+                </>
+              )}
+            </Button>
+
+            {lastUpdated && !scanResponses.isPending && (
+              <span className="text-sm text-muted-foreground">
+                Last updated: {formatLastUpdated(lastUpdated)}
+              </span>
             )}
-          </Button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Filter:</span>
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value as BrokerResponseType | 'all')}
+              className="text-sm border rounded-md px-3 py-1.5 bg-background"
+            >
+              <option value="all">All Types</option>
+              <option value="confirmation">Confirmations</option>
+              <option value="rejection">Rejections</option>
+              <option value="acknowledgment">Acknowledged</option>
+              <option value="request_info">Info Requested</option>
+              <option value="unknown">Unknown</option>
+            </select>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Filter:</span>
-          <select
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value as BrokerResponseType | 'all')}
-            className="text-sm border rounded-md px-3 py-1.5 bg-background"
-          >
-            <option value="all">All Types</option>
-            <option value="confirmation">Confirmations</option>
-            <option value="rejection">Rejections</option>
-            <option value="acknowledgment">Acknowledged</option>
-            <option value="request_info">Info Requested</option>
-            <option value="unknown">Unknown</option>
-          </select>
-        </div>
+        {/* Success Message */}
+        {showSuccess && (
+          <div className="flex items-center gap-2 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-md animate-in fade-in slide-in-from-top-2 duration-300">
+            <CheckCircle2 className="h-5 w-5" />
+            <div>
+              <p className="font-medium">Scan complete!</p>
+              <p className="text-sm text-green-700">
+                {responses?.length || 0} response{responses?.length !== 1 ? 's' : ''} found
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Scanning Animation */}
+        {scanResponses.isPending && (
+          <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-md animate-pulse">
+            <Loader2 className="h-5 w-5 animate-spin" />
+            <div>
+              <p className="font-medium">Scanning your inbox...</p>
+              <p className="text-sm text-blue-700">Looking for broker responses in the last 7 days</p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Response Cards */}

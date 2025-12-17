@@ -38,7 +38,11 @@ class BrokerResponse(Base):
     received_date = Column(DateTime, nullable=True)
 
     # Classification
-    response_type = Column(Enum(ResponseType), default=ResponseType.UNKNOWN, nullable=False)
+    response_type = Column(
+        Enum(ResponseType, values_callable=lambda x: [e.value for e in x]),
+        default=ResponseType.UNKNOWN,
+        nullable=False
+    )
     confidence_score = Column(Float, nullable=True)  # 0.0 to 1.0
     matched_by = Column(String, nullable=True)  # How we matched to deletion request
 

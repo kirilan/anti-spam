@@ -68,7 +68,7 @@ export const emailsApi = {
     return response.data
   },
 
-  getScans: async (userId: string, brokerOnly = false, limit = 100) => {
+  getScans: async (userId: string, brokerOnly = false, limit = 1000) => {
     const response = await api.get<EmailScan[]>(
       `/emails/scans?user_id=${userId}&broker_only=${brokerOnly}&limit=${limit}`
     )
@@ -121,7 +121,7 @@ export const requestsApi = {
 
 // Tasks API
 export const tasksApi = {
-  startScan: async (userId: string, daysBack = 90, maxEmails = 100) => {
+  startScan: async (userId: string, daysBack = 30, maxEmails = 300) => {
     const response = await api.post<TaskResponse>(`/tasks/scan?user_id=${userId}`, {
       days_back: daysBack,
       max_emails: maxEmails,

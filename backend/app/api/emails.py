@@ -76,7 +76,7 @@ def scan_emails(
 def get_scans(
     user_id: str,
     broker_only: bool = False,
-    limit: int = 50,
+    limit: int = 1000,
     db: Session = Depends(get_db)
 ):
     """Get email scan results for a user"""
@@ -85,6 +85,9 @@ def get_scans(
 
     if broker_only:
         query = query.filter(EmailScanModel.is_broker_email == True)
+
+    # Cap limit at 2000 for performance
+    limit = min(limit, 2000)
 
     scans = query.order_by(EmailScanModel.received_date.desc()).limit(limit).all()
 
