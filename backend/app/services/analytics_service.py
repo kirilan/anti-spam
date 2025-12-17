@@ -40,27 +40,27 @@ class AnalyticsService:
         # Convert to dict
         stats = {
             'total_requests': 0,
-            'confirmed': 0,
-            'sent': 0,
+            'confirmed_deletions': 0,
+            'sent_requests': 0,
             'rejected': 0,
-            'pending': 0
+            'pending_requests': 0
         }
 
         for status, count in status_counts:
             stats['total_requests'] += count
             if status == RequestStatus.CONFIRMED:
-                stats['confirmed'] = count
+                stats['confirmed_deletions'] = count
             elif status == RequestStatus.SENT:
-                stats['sent'] = count
+                stats['sent_requests'] = count
             elif status == RequestStatus.REJECTED:
                 stats['rejected'] = count
             elif status == RequestStatus.PENDING:
-                stats['pending'] = count
+                stats['pending_requests'] = count
 
         # Calculate success rate
-        total_sent = stats['confirmed'] + stats['sent'] + stats['rejected']
+        total_sent = stats['confirmed_deletions'] + stats['sent_requests'] + stats['rejected']
         if total_sent > 0:
-            stats['success_rate'] = round((stats['confirmed'] / total_sent) * 100, 1)
+            stats['success_rate'] = round((stats['confirmed_deletions'] / total_sent) * 100, 1)
         else:
             stats['success_rate'] = 0.0
 
@@ -81,9 +81,9 @@ class AnalyticsService:
                 (req.confirmed_at - req.sent_at).days
                 for req in confirmed_requests
             )
-            stats['average_response_time_days'] = round(total_days / len(confirmed_requests), 1)
+            stats['avg_response_time_days'] = round(total_days / len(confirmed_requests), 1)
         else:
-            stats['average_response_time_days'] = 0.0
+            stats['avg_response_time_days'] = None
 
         return stats
 
@@ -159,10 +159,10 @@ class AnalyticsService:
                 'broker_id': str(row.broker_id),
                 'broker_name': row.broker_name,
                 'total_requests': row.total_requests,
-                'confirmed': row.confirmed,
+                'confirmations': row.confirmed,
                 'rejected': row.rejected,
                 'success_rate': round(success_rate, 1),
-                'average_response_days': avg_response_days
+                'avg_response_time_days': avg_response_days if avg_response_days > 0 else None
             })
 
         # Sort by success rate descending, then by total requests

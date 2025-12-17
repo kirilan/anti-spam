@@ -5,7 +5,8 @@
       "Bash(dir /s \"c:\\Users\\kiril\\Documents\\code\\antispam\\backend\")",
       "Bash(dir:*)",
       "Bash(docker compose:*)",
-      "Bash(wsl docker compose:*)"
+      "Bash(wsl docker compose:*)",
+      "Bash(curl:*)"
     ]
   }
 }

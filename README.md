@@ -11,6 +11,28 @@ A comprehensive web application that scans your Gmail inbox for data broker comm
 
 ---
 
+> [!WARNING]
+> **🚧 EARLY DEVELOPMENT VERSION 🚧**
+>
+> This project is currently in **active development** and should be considered **alpha/beta quality**.
+>
+> **Known Limitations:**
+> - ⚠️ Not production-ready - use at your own risk
+> - 🐛 May contain bugs and incomplete features
+> - 🔄 APIs and database schema may change without notice
+> - 📝 Documentation may be incomplete or outdated
+> - 🔒 Security features are still being hardened
+>
+> **Recommended Usage:**
+> - ✅ Development and testing environments only
+> - ✅ Personal experimentation and learning
+> - ✅ Contributing to development
+> - ❌ Not recommended for production use with real personal data
+>
+> **Contributions welcome!** Help us make this production-ready. See [Contributing](#-contributing) section below.
+
+---
+
 ## 📋 Table of Contents
 
 - [Features](#-features)
