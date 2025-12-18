@@ -1,0 +1,20 @@
+# Git & editor metadata
+.git
+.gitignore
+.idea
+.vscode
+
+# Node modules & lockfiles copied separately
+node_modules
+npm-debug.log*
+pnpm-lock.yaml
+yarn.lock
+
+# Build outputs
+dist
+coverage
+.nyc_output
+
+# Env files
+.env
+.env.*
