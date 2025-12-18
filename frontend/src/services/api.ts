@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { useAuthStore } from '@/stores/authStore'
+import { useRateLimitStore } from '@/stores/rateLimitStore'
 import type {
   AuthStatus,
   Broker,
@@ -13,6 +14,7 @@ import type {
   ScanRequest,
   BrokerResponse,
   TaskQueueHealth,
+  User,
 } from '@/types'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
@@ -32,6 +34,29 @@ api.interceptors.request.use((config) => {
   }
   return config
 })
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error.response?.status
+    if (status === 429) {
+      const detail =
+        error.response?.data?.detail ||
+        error.response?.data?.message ||
+        'Too many requests. Please slow down.'
+      const retryHeader = error.response?.headers?.['retry-after']
+      const retryAfter = retryHeader ? Number(retryHeader) : undefined
+      useRateLimitStore
+        .getState()
+        .setNotice({
+          message: detail,
+          retryAfter: Number.isFinite(retryAfter) ? retryAfter : undefined,
+          triggeredAt: Date.now(),
+        })
+    }
+    return Promise.reject(error)
+  }
+)
 
 // Auth API
 export const authApi = {
@@ -223,6 +248,26 @@ export const activitiesApi = {
     const response = await api.get(`/activities/?${params}`)
     return response.data
   }
+}
+
+// Admin API
+export const adminApi = {
+  listUsers: async () => {
+    const response = await api.get<User[]>('/admin/users')
+    return response.data
+  },
+
+  updateUserRole: async (userId: string, isAdmin: boolean) => {
+    const response = await api.patch<User>(`/admin/users/${userId}/role`, {
+      is_admin: isAdmin,
+    })
+    return response.data
+  },
+
+  revokeTokens: async (userId: string) => {
+    const response = await api.post<{ message: string }>(`/admin/users/${userId}/revoke-tokens`)
+    return response.data
+  },
 }
 
 export default api

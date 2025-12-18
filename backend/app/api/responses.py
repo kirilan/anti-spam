@@ -4,10 +4,14 @@ from typing import List, Optional
 
 from app.database import get_db
 from app.models.broker_response import BrokerResponse as BrokerResponseModel
-from app.schemas.response import BrokerResponse, ScanResponsesRequest
+from app.schemas.response import BrokerResponse
 from app.tasks.email_tasks import scan_for_responses_task
 from app.models.user import User
-from app.dependencies.auth import get_current_user, require_admin
+from app.dependencies.auth import get_current_user
+from app.models.activity_log import ActivityType
+from app.services.activity_log_service import ActivityLogService
+from app.services.rate_limiter import rate_limiter
+from app.config import settings
 
 router = APIRouter()
 
@@ -68,6 +72,27 @@ def scan_responses(
     This starts a background task to scan the user's inbox for responses
     to deletion requests.
     """
+    activity_service = ActivityLogService(db)
+
+    limit_result = rate_limiter.check_limit(
+        user_id=str(current_user.id),
+        action="response_scan",
+        limit=settings.response_scan_rate_limit,
+        window_seconds=settings.response_scan_rate_window_seconds,
+    )
+    if not limit_result.allowed:
+        activity_service.log_activity(
+            user_id=str(current_user.id),
+            activity_type=ActivityType.WARNING,
+            message="Response scan blocked by rate limit",
+            details=f"Limit {settings.response_scan_rate_limit} per {settings.response_scan_rate_window_seconds}s",
+        )
+        raise HTTPException(
+            status_code=429,
+            detail=f"Response scan limit reached. Try again in {limit_result.retry_after} seconds.",
+            headers={"Retry-After": str(limit_result.retry_after)},
+        )
+
     # Start background task
     task = scan_for_responses_task.delay(str(current_user.id), days_back)
 

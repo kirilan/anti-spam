@@ -5,8 +5,9 @@ import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { tasksApi } from '@/services/api'
 import { useAuthStore } from '@/stores/authStore'
+import { getErrorMessage, getStatusMessage } from '@/utils/errorMessages'
 import { TaskStatus } from '@/types'
-import { Loader2, Play, CheckCircle, XCircle, Mail, RotateCw, Clock } from 'lucide-react'
+import { Loader2, Play, CheckCircle, XCircle, Mail, RotateCw, Clock, AlertTriangle } from 'lucide-react'
 
 export function EmailScanner() {
   const { userId, user } = useAuthStore()
@@ -15,6 +16,8 @@ export function EmailScanner() {
   const [isStarting, setIsStarting] = useState(false)
   const [daysBack, setDaysBack] = useState(30)
   const [maxEmails, setMaxEmails] = useState(300)
+  const [scanError, setScanError] = useState<{ message: string; retryAfter?: number } | null>(null)
+  const [retryCountdown, setRetryCountdown] = useState<number | null>(null)
 
   // Poll for task status
   useEffect(() => {
@@ -47,15 +50,50 @@ export function EmailScanner() {
     if (!userId) return
 
     setIsStarting(true)
+    setScanError(null)
     try {
       const response = await tasksApi.startScan(userId, daysBack, maxEmails)
       setTaskId(response.task_id)
       setTaskStatus(null)
     } catch (error) {
       console.error('Failed to start scan:', error)
+      const status = (error as any)?.response?.status
+      const retryHeader = (error as any)?.response?.headers?.['retry-after']
+      const retryAfter = retryHeader ? Number(retryHeader) : undefined
+      const message = status
+        ? getStatusMessage(status)
+        : getErrorMessage(error)
+      setScanError({
+        message,
+        retryAfter: Number.isFinite(retryAfter) ? retryAfter : undefined,
+      })
     } finally {
       setIsStarting(false)
     }
+  }
+
+  useEffect(() => {
+    if (!scanError?.retryAfter) {
+      setRetryCountdown(null)
+      return
+    }
+    setRetryCountdown(scanError.retryAfter)
+    const interval = setInterval(() => {
+      setRetryCountdown((prev) => {
+        if (prev === null) return prev
+        return prev > 1 ? prev - 1 : 0
+      })
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [scanError])
+
+  const formatCountdown = (seconds: number | null) => {
+    if (seconds === null) return null
+    if (seconds <= 0) return 'now'
+    if (seconds < 60) return `${Math.ceil(seconds)}s`
+    const minutes = Math.floor(seconds / 60)
+    const remainder = Math.floor(seconds % 60)
+    return remainder > 0 ? `${minutes}m ${remainder}s` : `${minutes}m`
   }
 
   const getProgress = () => {
@@ -143,6 +181,21 @@ export function EmailScanner() {
                 Maximum number of emails to process
               </p>
             </div>
+
+            {scanError && (
+              <div className="rounded-md border border-yellow-200 bg-yellow-50 px-3 py-2 text-sm text-yellow-800 flex gap-2">
+                <AlertTriangle className="h-4 w-4 mt-0.5" />
+                <div>
+                  <p className="font-medium">Scan temporarily blocked</p>
+                  <p>{scanError.message}</p>
+                  {scanError.retryAfter !== undefined && (
+                    <p className="text-xs text-yellow-700">
+                      Try again {formatCountdown(retryCountdown)}.
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
 
             <Button
               onClick={handleStartScan}

@@ -10,6 +10,8 @@ from app.schemas.email import ScanRequest, ScanResult, EmailScan
 from app.services.email_scanner import EmailScanner
 from app.services.activity_log_service import ActivityLogService
 from app.dependencies.auth import get_current_user
+from app.config import settings
+from app.services.rate_limiter import rate_limiter
 
 router = APIRouter()
 
@@ -34,6 +36,26 @@ def scan_emails(
     # Scan inbox
     scanner = EmailScanner(db)
     activity_service = ActivityLogService(db)
+
+    # Enforce per-user scan limits
+    limit_result = rate_limiter.check_limit(
+        user_id=str(user.id),
+        action="email_scan",
+        limit=settings.email_scan_rate_limit,
+        window_seconds=settings.email_scan_rate_window_seconds,
+    )
+    if not limit_result.allowed:
+        activity_service.log_activity(
+            user_id=str(user.id),
+            activity_type=ActivityType.WARNING,
+            message="Email scan blocked by rate limit",
+            details=f"Limit {settings.email_scan_rate_limit} per {settings.email_scan_rate_window_seconds}s",
+        )
+        raise HTTPException(
+            status_code=429,
+            detail=f"Email scan limit reached. Try again in {limit_result.retry_after} seconds.",
+            headers={"Retry-After": str(limit_result.retry_after)},
+        )
 
     try:
         scans = scanner.scan_inbox(

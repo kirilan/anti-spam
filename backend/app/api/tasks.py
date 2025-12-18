@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
+from sqlalchemy.orm import Session
 from celery.result import AsyncResult
 from pydantic import BaseModel
 from typing import Optional, List
@@ -8,6 +9,11 @@ from app.celery_app import celery_app
 from app.tasks.email_tasks import scan_inbox_task
 from app.dependencies.auth import get_current_user, require_admin
 from app.models.user import User
+from app.database import get_db
+from app.services.rate_limiter import rate_limiter
+from app.config import settings
+from app.services.activity_log_service import ActivityLogService
+from app.models.activity_log import ActivityType
 
 router = APIRouter()
 
@@ -57,8 +63,30 @@ class TaskQueueHealth(BaseModel):
 def start_scan_task(
     request: ScanTaskRequest,
     current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     """Start an async email scan task"""
+    activity_service = ActivityLogService(db)
+
+    limit_result = rate_limiter.check_limit(
+        user_id=str(current_user.id),
+        action="task_scan_trigger",
+        limit=settings.task_trigger_rate_limit,
+        window_seconds=settings.task_trigger_rate_window_seconds,
+    )
+    if not limit_result.allowed:
+        activity_service.log_activity(
+            user_id=str(current_user.id),
+            activity_type=ActivityType.WARNING,
+            message="Task scan blocked by rate limit",
+            details=f"Limit {settings.task_trigger_rate_limit} per {settings.task_trigger_rate_window_seconds}s",
+        )
+        raise HTTPException(
+            status_code=429,
+            detail=f"Scan task limit reached. Try again in {limit_result.retry_after} seconds.",
+            headers={"Retry-After": str(limit_result.retry_after)},
+        )
+
     task = scan_inbox_task.delay(
         str(current_user.id),
         days_back=request.days_back,

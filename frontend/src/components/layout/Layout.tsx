@@ -3,6 +3,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { useLogout } from '@/hooks/useAuth'
 import { useTheme } from '@/hooks/useTheme'
 import { Button } from '@/components/ui/button'
+import { RateLimitNotice } from './RateLimitNotice'
 import {
   LayoutDashboard,
   Mail,
@@ -10,15 +11,16 @@ import {
   FileText,
   LogOut,
   Shield,
+  ShieldCheck,
   ScanSearch,
   MessageSquare,
   BarChart3,
   Sun,
   Moon,
-  List
+  List,
 } from 'lucide-react'
 
-const navItems = [
+const baseNavItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/scan', label: 'Scan Emails', icon: ScanSearch },
   { href: '/emails', label: 'Email Results', icon: Mail },
@@ -48,7 +50,7 @@ export function Layout() {
 
           {/* Navigation */}
           <nav className="flex-1 space-y-1 p-4">
-            {navItems.map((item) => {
+            {[...baseNavItems, ...(user?.is_admin ? [{ href: '/admin/users', label: 'Admin', icon: ShieldCheck }] : [])].map((item) => {
               const Icon = item.icon
               const isActive = location.pathname === item.href
               return (
@@ -99,6 +101,7 @@ export function Layout() {
       {/* Main content */}
       <main className="ml-64 min-h-screen">
         <div className="p-8">
+          <RateLimitNotice />
           <Outlet />
         </div>
       </main>

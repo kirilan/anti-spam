@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { useBrokers, useSyncBrokers, useCreateBroker } from '@/hooks/useBrokers'
 import { useCreateRequest, useRequests } from '@/hooks/useRequests'
+import { useAuthStore } from '@/stores/authStore'
 import { Broker } from '@/types'
 import {
   Database,
@@ -19,6 +20,7 @@ import {
 } from 'lucide-react'
 
 export function BrokerList() {
+  const { user } = useAuthStore()
   const { data: brokers, isLoading, error } = useBrokers()
   const syncBrokers = useSyncBrokers()
   const { data: requests } = useRequests()
@@ -68,23 +70,25 @@ export function BrokerList() {
             {brokers?.length || 0} known data brokers in database
           </p>
         </div>
-        <Button
-          variant="secondary"
-          onClick={handleSyncBrokers}
-          disabled={syncBrokers.isPending}
-        >
-          {syncBrokers.isPending ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Syncing...
-            </>
-          ) : (
-            <>
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Sync Brokers
-            </>
-          )}
-        </Button>
+        {user?.is_admin && (
+          <Button
+            variant="secondary"
+            onClick={handleSyncBrokers}
+            disabled={syncBrokers.isPending}
+          >
+            {syncBrokers.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Syncing...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Sync Brokers
+              </>
+            )}
+          </Button>
+        )}
       </div>
 
       {(syncMessage || syncError) && (
@@ -97,7 +101,7 @@ export function BrokerList() {
         </div>
       )}
 
-      <CreateBrokerForm />
+      {user?.is_admin && <CreateBrokerForm />}
 
       {brokers && brokers.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -114,21 +118,26 @@ export function BrokerList() {
           <CardContent className="flex flex-col items-center justify-center space-y-4 py-12 text-center">
             <Database className="h-12 w-12 text-muted-foreground mb-4" />
             <p className="text-muted-foreground">
-              No data brokers in the database yet. Sync from the broker directory to load the defaults.
+              No data brokers in the database yet.{' '}
+              {user?.is_admin
+                ? 'Sync from the broker directory to load the defaults.'
+                : 'Ask an admin to sync the shared broker directory.'}
             </p>
-            <Button onClick={handleSyncBrokers} disabled={syncBrokers.isPending}>
-              {syncBrokers.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Syncing...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Sync Brokers
-                </>
-              )}
-            </Button>
+            {user?.is_admin && (
+              <Button onClick={handleSyncBrokers} disabled={syncBrokers.isPending}>
+                {syncBrokers.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Syncing...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Sync Brokers
+                  </>
+                )}
+              </Button>
+            )}
           </CardContent>
         </Card>
       )}

@@ -9,6 +9,7 @@ import { useResponses } from '@/hooks/useResponses'
 import { useAnalytics } from '@/hooks/useAnalytics'
 import { useTaskHealth } from '@/hooks/useTasks'
 import { Mail, Database, FileText, CheckCircle, Clock, TrendingUp, MessageSquare, ScanSearch, BarChart3, Server, RefreshCw, Loader2 } from 'lucide-react'
+import { useAuthStore } from '@/stores/authStore'
 
 const responseTypeConfig: Record<string, { color: string; bg: string }> = {
   confirmation: { color: 'text-green-600', bg: 'bg-green-50' },
@@ -19,6 +20,7 @@ const responseTypeConfig: Record<string, { color: string; bg: string }> = {
 }
 
 export function Dashboard() {
+  const { user } = useAuthStore()
   const { data: allScans } = useEmailScans(false)
   const { data: brokerScans } = useEmailScans(true)
   const { data: requests } = useRequests()
@@ -224,68 +226,70 @@ export function Dashboard() {
       </div>
 
       {/* Task Queue Health */}
-      <Card>
-        <CardHeader className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Server className="h-5 w-5 text-primary" />
-            <CardTitle>Task Queue Status</CardTitle>
-          </div>
-          <Button variant="ghost" size="sm" onClick={() => refetchTaskHealth()}>
-            <RefreshCw className="h-4 w-4 mr-1" />
-            Refresh
-          </Button>
-        </CardHeader>
-        <CardContent>
-          {taskHealthLoading ? (
-            <div className="flex items-center justify-center py-6 text-muted-foreground">
-              <Loader2 className="h-5 w-5 animate-spin" />
+      {user?.is_admin && (
+        <Card>
+          <CardHeader className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Server className="h-5 w-5 text-primary" />
+              <CardTitle>Task Queue Status</CardTitle>
             </div>
-          ) : taskHealth ? (
-            <div className="space-y-4">
-              <div className="grid gap-4 sm:grid-cols-3 text-center">
-                <div>
-                  <p className="text-sm text-muted-foreground">Workers Online</p>
-                  <p className="text-2xl font-bold">{taskHealth.workers_online}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Active Tasks</p>
-                  <p className="text-2xl font-bold">{taskHealth.total_active_tasks}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Queued/Scheduled</p>
-                  <p className="text-2xl font-bold">{taskHealth.total_queued_tasks}</p>
-                </div>
+            <Button variant="ghost" size="sm" onClick={() => refetchTaskHealth()}>
+              <RefreshCw className="h-4 w-4 mr-1" />
+              Refresh
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {taskHealthLoading ? (
+              <div className="flex items-center justify-center py-6 text-muted-foreground">
+                <Loader2 className="h-5 w-5 animate-spin" />
               </div>
-              <div className="space-y-2">
-                {taskHealth.workers.length > 0 ? (
-                  taskHealth.workers.map((worker) => (
-                    <div key={worker.name} className="rounded-lg border p-3">
-                      <div className="flex items-center justify-between">
-                        <p className="font-medium">{worker.name}</p>
-                        <Badge variant={worker.status === 'online' ? 'default' : 'destructive'}>
-                          {worker.status}
-                        </Badge>
+            ) : taskHealth ? (
+              <div className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-3 text-center">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Workers Online</p>
+                    <p className="text-2xl font-bold">{taskHealth.workers_online}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Active Tasks</p>
+                    <p className="text-2xl font-bold">{taskHealth.total_active_tasks}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Queued/Scheduled</p>
+                    <p className="text-2xl font-bold">{taskHealth.total_queued_tasks}</p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  {taskHealth.workers.length > 0 ? (
+                    taskHealth.workers.map((worker) => (
+                      <div key={worker.name} className="rounded-lg border p-3">
+                        <div className="flex items-center justify-between">
+                          <p className="font-medium">{worker.name}</p>
+                          <Badge variant={worker.status === 'online' ? 'default' : 'destructive'}>
+                            {worker.status}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Active: {worker.active_tasks} | Queued: {worker.queued_tasks} | Scheduled: {worker.scheduled_tasks}
+                        </p>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Active: {worker.active_tasks} | Queued: {worker.queued_tasks} | Scheduled: {worker.scheduled_tasks}
-                      </p>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-sm text-muted-foreground text-center">No workers detected.</p>
-                )}
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground text-center">No workers detected.</p>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground text-right">
+                  Updated {new Date(taskHealth.last_updated).toLocaleTimeString()}
+                </p>
               </div>
-              <p className="text-xs text-muted-foreground text-right">
-                Updated {new Date(taskHealth.last_updated).toLocaleTimeString()}
+            ) : (
+              <p className="text-center text-sm text-muted-foreground py-4">
+                Unable to fetch task queue status.
               </p>
-            </div>
-          ) : (
-            <p className="text-center text-sm text-muted-foreground py-4">
-              Unable to fetch task queue status.
-            </p>
-          )}
-        </CardContent>
-      </Card>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Recent Broker Emails */}
       {brokerScans && brokerScans.length > 0 && (

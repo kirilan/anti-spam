@@ -11,6 +11,7 @@ import { RequestList } from './components/requests/RequestList'
 import { ResponseList } from './components/responses/ResponseList'
 import { AnalyticsDashboard } from './components/analytics/AnalyticsDashboard'
 import { ActivityLog } from './components/activity/ActivityLog'
+import { UserManagement } from './components/admin/UserManagement'
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
             <Route path="/responses" element={<ResponseList />} />
             <Route path="/analytics" element={<AnalyticsDashboard />} />
             <Route path="/activity" element={<ActivityLog />} />
+            <Route path="/admin/users" element={<UserManagement />} />
           </Route>
         </Route>
 

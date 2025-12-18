@@ -23,6 +23,14 @@ class Settings(BaseSettings):
     # Application Settings
     environment: str = "development"
 
+    # Rate limiting (per user)
+    email_scan_rate_limit: int = 5
+    email_scan_rate_window_seconds: int = 60 * 60  # 1 hour
+    response_scan_rate_limit: int = 5
+    response_scan_rate_window_seconds: int = 60 * 60
+    task_trigger_rate_limit: int = 8
+    task_trigger_rate_window_seconds: int = 60 * 60
+
     class Config:
         env_file = ".env"
         case_sensitive = False
