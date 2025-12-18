@@ -3,13 +3,32 @@ import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { useBrokers } from '@/hooks/useBrokers'
+import { useBrokers, useSyncBrokers } from '@/hooks/useBrokers'
 import { useCreateRequest } from '@/hooks/useRequests'
 import { Broker } from '@/types'
-import { Database, Globe, Mail, Loader2, AlertTriangle, FileText } from 'lucide-react'
+import { Database, Globe, Mail, Loader2, AlertTriangle, FileText, RefreshCw } from 'lucide-react'
 
 export function BrokerList() {
   const { data: brokers, isLoading, error } = useBrokers()
+  const syncBrokers = useSyncBrokers()
+  const [syncMessage, setSyncMessage] = useState<string | null>(null)
+  const [syncError, setSyncError] = useState<string | null>(null)
+
+  const handleSyncBrokers = async () => {
+    setSyncMessage(null)
+    setSyncError(null)
+    try {
+      const result = await syncBrokers.mutateAsync()
+      const defaultMessage =
+        result.brokers_added > 0
+          ? `${result.brokers_added} brokers added (${result.total_brokers} total)`
+          : `Database already up to date (${result.total_brokers} total)`
+      setSyncMessage(result.message || defaultMessage)
+    } catch (err) {
+      console.error('Failed to sync brokers:', err)
+      setSyncError('Failed to sync brokers. Please try again.')
+    }
+  }
 
   if (isLoading) {
     return (
@@ -30,12 +49,41 @@ export function BrokerList() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Data Brokers</h1>
-        <p className="text-muted-foreground">
-          {brokers?.length || 0} known data brokers in database
-        </p>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Data Brokers</h1>
+          <p className="text-muted-foreground">
+            {brokers?.length || 0} known data brokers in database
+          </p>
+        </div>
+        <Button
+          variant="secondary"
+          onClick={handleSyncBrokers}
+          disabled={syncBrokers.isPending}
+        >
+          {syncBrokers.isPending ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Syncing...
+            </>
+          ) : (
+            <>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Sync Brokers
+            </>
+          )}
+        </Button>
       </div>
+
+      {(syncMessage || syncError) && (
+        <div
+          className={`text-sm rounded-md border px-3 py-2 ${
+            syncError ? 'text-red-500 border-red-200 bg-red-50' : 'text-green-600 border-green-200 bg-green-50'
+          }`}
+        >
+          {syncError || syncMessage}
+        </div>
+      )}
 
       {brokers && brokers.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -45,11 +93,24 @@ export function BrokerList() {
         </div>
       ) : (
         <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
+          <CardContent className="flex flex-col items-center justify-center space-y-4 py-12 text-center">
             <Database className="h-12 w-12 text-muted-foreground mb-4" />
             <p className="text-muted-foreground">
-              No data brokers in the database yet.
+              No data brokers in the database yet. Sync from the broker directory to load the defaults.
             </p>
+            <Button onClick={handleSyncBrokers} disabled={syncBrokers.isPending}>
+              {syncBrokers.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Syncing...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Sync Brokers
+                </>
+              )}
+            </Button>
           </CardContent>
         </Card>
       )}

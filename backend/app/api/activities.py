@@ -28,4 +28,18 @@ def get_activities(
         days_back=days_back,
         limit=limit
     )
-    return activities
+    return [
+        ActivityLogResponse(
+            id=str(activity.id),
+            user_id=str(activity.user_id),
+            activity_type=activity.activity_type,
+            message=activity.message,
+            details=activity.details,
+            broker_id=str(activity.broker_id) if activity.broker_id else None,
+            deletion_request_id=str(activity.deletion_request_id) if activity.deletion_request_id else None,
+            response_id=str(activity.response_id) if activity.response_id else None,
+            email_scan_id=str(activity.email_scan_id) if activity.email_scan_id else None,
+            created_at=activity.created_at,
+        )
+        for activity in activities
+    ]
