@@ -38,6 +38,7 @@ services:
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/antispam
       - REDIS_URL=redis://redis:6379/0
+      - RUN_DB_MIGRATIONS=true
     env_file:
       - .env
     volumes:
@@ -56,6 +57,7 @@ services:
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/antispam
       - REDIS_URL=redis://redis:6379/0
+      - RUN_DB_MIGRATIONS=false
     env_file:
       - .env
     volumes:
@@ -74,6 +76,7 @@ services:
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/antispam
       - REDIS_URL=redis://redis:6379/0
+      - RUN_DB_MIGRATIONS=false
     env_file:
       - .env
     volumes:

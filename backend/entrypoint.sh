@@ -18,16 +18,20 @@ until PGPASSWORD=$DB_PASS psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -c '\q'
 done
 echo "✓ Database is ready"
 
-# Run migrations
-echo ""
-echo "Running database migrations..."
-python migrations/run_migrations.py
+RUN_DB_MIGRATIONS=${RUN_DB_MIGRATIONS:-true}
 
-if [ $? -eq 0 ]; then
-    echo "✓ Migrations complete"
+if [ "$RUN_DB_MIGRATIONS" = "true" ] || [ "$RUN_DB_MIGRATIONS" = "1" ]; then
+  echo ""
+  echo "Running database migrations..."
+  if python migrations/run_migrations.py; then
+      echo "✓ Migrations complete"
+  else
+      echo "✗ Migrations failed"
+      exit 1
+  fi
 else
-    echo "✗ Migrations failed"
-    exit 1
+  echo ""
+  echo "Skipping database migrations (RUN_DB_MIGRATIONS=$RUN_DB_MIGRATIONS)"
 fi
 
 echo ""
