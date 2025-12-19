@@ -207,6 +207,14 @@ export const responsesApi = {
     const response = await api.post<TaskResponse>(`/responses/scan?user_id=${userId}&days_back=${daysBack}`)
     return response.data
   },
+
+  classify: async (
+    responseId: string,
+    payload: { response_type: BrokerResponse['response_type']; deletion_request_id?: string | null }
+  ) => {
+    const response = await api.patch<BrokerResponse>(`/responses/${responseId}/classify`, payload)
+    return response.data
+  },
 }
 
 // Analytics API

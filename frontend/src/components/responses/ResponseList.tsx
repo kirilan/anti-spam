@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { useResponses, useScanResponses } from '@/hooks/useResponses'
+import { useResponses, useScanResponses, useClassifyResponse } from '@/hooks/useResponses'
 import type { BrokerResponse, BrokerResponseType } from '@/types'
 import {
   CheckCircle,
@@ -191,6 +191,9 @@ export function ResponseList() {
 
 function ResponseCard({ response }: { response: BrokerResponse }) {
   const [expanded, setExpanded] = useState(false)
+  const [selectedType, setSelectedType] = useState<BrokerResponseType>(response.response_type)
+  const [saveMessage, setSaveMessage] = useState<string | null>(null)
+  const classifyResponse = useClassifyResponse()
   const config = responseTypeConfig[response.response_type] || responseTypeConfig.unknown
   const Icon = config.icon
 
@@ -206,6 +209,28 @@ function ResponseCard({ response }: { response: BrokerResponse }) {
     if (diffDays < 7) return `${diffDays} days ago`
     return date.toLocaleDateString()
   }
+
+  const handleSave = async () => {
+    try {
+      setSaveMessage(null)
+      await classifyResponse.mutateAsync({
+        responseId: response.id,
+        responseType: selectedType,
+        deletionRequestId: response.deletion_request_id,
+      })
+      setSaveMessage('Classification saved')
+      setTimeout(() => setSaveMessage(null), 2500)
+    } catch (err) {
+      console.error('Failed to classify response', err)
+      setSaveMessage('Save failed')
+      setTimeout(() => setSaveMessage(null), 3000)
+    }
+  }
+
+  // Keep local selection in sync when data refreshes
+  useEffect(() => {
+    setSelectedType(response.response_type)
+  }, [response.response_type])
 
   return (
     <Card>
@@ -249,6 +274,40 @@ function ResponseCard({ response }: { response: BrokerResponse }) {
           </div>
         </div>
       </CardHeader>
+
+      <CardContent className="pt-0 border-t">
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div className="space-y-1">
+            <p className="text-sm font-medium">Manual classification</p>
+            <p className="text-xs text-muted-foreground">
+              Confirmation/Rejection will update the linked request status.
+            </p>
+          </div>
+          <div className="flex flex-col md:flex-row gap-2 md:items-center">
+            <select
+              value={selectedType}
+              onChange={(e) => setSelectedType(e.target.value as BrokerResponseType)}
+              className="text-sm border rounded-md px-3 py-2 bg-background"
+            >
+              <option value="confirmation">Confirmation</option>
+              <option value="rejection">Rejection</option>
+              <option value="acknowledgment">Acknowledged</option>
+              <option value="request_info">Info Requested</option>
+              <option value="unknown">Unknown</option>
+            </select>
+            <Button
+              size="sm"
+              onClick={handleSave}
+              disabled={classifyResponse.isPending}
+            >
+              {classifyResponse.isPending ? 'Saving...' : 'Save'}
+            </Button>
+            {saveMessage && (
+              <span className="text-xs text-muted-foreground">{saveMessage}</span>
+            )}
+          </div>
+        </div>
+      </CardContent>
 
       {response.body_text && (
         <CardContent className="pt-0">

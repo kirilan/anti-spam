@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 
 from app.models.broker_response import BrokerResponse
-from app.models.deletion_request import DeletionRequest
+from app.models.deletion_request import DeletionRequest, RequestStatus
 from app.models.data_broker import DataBroker
 from app.services.broker_service import BrokerService
 
@@ -105,7 +105,7 @@ class ResponseMatcher:
             .filter(
                 DeletionRequest.user_id == response.user_id,
                 DeletionRequest.broker_id == broker.id,
-                DeletionRequest.status == 'sent',
+                DeletionRequest.status == RequestStatus.SENT,
                 DeletionRequest.sent_at >= cutoff_date
             )
             .order_by(DeletionRequest.sent_at.desc())
@@ -149,7 +149,7 @@ class ResponseMatcher:
             .filter(
                 DeletionRequest.user_id == response.user_id,
                 DeletionRequest.broker_id == broker.id,
-                DeletionRequest.status == 'sent',
+                DeletionRequest.status == RequestStatus.SENT,
                 DeletionRequest.sent_at >= cutoff_date,
                 ~DeletionRequest.id.in_(requests_with_responses)
             )

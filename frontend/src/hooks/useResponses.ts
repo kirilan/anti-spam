@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { responsesApi } from '@/services/api'
 import { useAuthStore } from '@/stores/authStore'
-import type { BrokerResponse } from '@/types'
+import type { BrokerResponse, BrokerResponseType } from '@/types'
 
 export function useResponses(requestId?: string) {
   const { userId } = useAuthStore()
@@ -31,6 +31,34 @@ export function useScanResponses() {
       // Invalidate and refetch responses after scan
       queryClient.invalidateQueries({ queryKey: ['responses'] })
       queryClient.invalidateQueries({ queryKey: ['requests'] })
+    },
+  })
+}
+
+export function useClassifyResponse() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      responseId,
+      responseType,
+      deletionRequestId,
+    }: {
+      responseId: string
+      responseType: BrokerResponseType
+      deletionRequestId?: string | null
+    }) =>
+      responsesApi.classify(responseId, {
+        response_type: responseType,
+        deletion_request_id: deletionRequestId ?? undefined,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['responses'] })
+      queryClient.invalidateQueries({ queryKey: ['requests'] })
+      queryClient.invalidateQueries({ queryKey: ['analytics'] })
+      queryClient.invalidateQueries({ queryKey: ['analytics', 'response-distribution'] })
+      queryClient.invalidateQueries({ queryKey: ['analytics', 'timeline'] })
+      queryClient.invalidateQueries({ queryKey: ['analytics', 'broker-ranking'] })
     },
   })
 }

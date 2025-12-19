@@ -68,7 +68,7 @@ export function AnalyticsDashboard() {
             title="Confirmations"
             value={stats.confirmed_deletions}
             icon={CheckCircle}
-            description={`Out of ${stats.sent_requests} sent`}
+            description={`Out of ${stats.total_requests} request${stats.total_requests === 1 ? '' : 's'}`}
           />
           <StatsCard
             title="Avg Response Time"

@@ -31,6 +31,7 @@ class DeletionRequest(BaseModel):
     next_retry_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
+    warning: Optional[str] = None
 
     class Config:
         from_attributes = True

@@ -8,6 +8,7 @@ import { useBrokers } from '@/hooks/useBrokers'
 import { useResponses } from '@/hooks/useResponses'
 import { DeletionRequest, EmailScan, BrokerResponse } from '@/types'
 import { EmailPreviewDialog } from './EmailPreviewDialog'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   FileText,
   Loader2,
@@ -29,10 +30,12 @@ export function RequestList() {
   const { data: brokers } = useBrokers()
   const { data: responses } = useResponses()
   const createRequest = useCreateRequest()
+  const queryClient = useQueryClient()
   const [previewRequest, setPreviewRequest] = useState<DeletionRequest | null>(null)
   const [creatingFor, setCreatingFor] = useState<string | null>(null)
   const [sendingRequestId, setSendingRequestId] = useState<string | null>(null)
   const [permissionError, setPermissionError] = useState(false)
+  const [createWarning, setCreateWarning] = useState<string | null>(null)
 
   // Create a map of broker IDs to broker names for quick lookup
   const brokerMap = new Map(brokers?.map(b => [b.id, b.name]) || [])
@@ -62,7 +65,8 @@ export function RequestList() {
   const handleCreateRequest = async (brokerId: string) => {
     setCreatingFor(brokerId)
     try {
-      await createRequest.mutateAsync(brokerId)
+      const result = await createRequest.mutateAsync(brokerId)
+      setCreateWarning(result?.warning || null)
     } finally {
       setCreatingFor(null)
     }
@@ -74,6 +78,10 @@ export function RequestList() {
       const { requestsApi } = await import('@/services/api')
       await requestsApi.sendRequest(requestId)
       await refetch() // Refresh the list to show updated status
+      queryClient.invalidateQueries({ queryKey: ['analytics'] })
+      queryClient.invalidateQueries({ queryKey: ['analytics', 'stats'] })
+      queryClient.invalidateQueries({ queryKey: ['analytics', 'timeline'] })
+      queryClient.invalidateQueries({ queryKey: ['analytics', 'broker-ranking'] })
     } catch (error: any) {
       console.error('Failed to send email:', error)
       if (error.response?.status === 403 || error.response?.data?.detail?.includes('permission')) {
@@ -85,8 +93,9 @@ export function RequestList() {
     }
   }
 
-  // Get broker IDs that already have requests
-  const existingBrokerIds = new Set(requests?.map(r => r.broker_id) || [])
+  // Get broker IDs that already have an active (pending or sent) request
+  const activeRequests = (requests || []).filter(r => r.status === 'pending' || r.status === 'sent')
+  const existingBrokerIds = new Set(activeRequests.map(r => r.broker_id))
 
   // Get unique brokers from email scans that don't have requests yet
   const brokersWithoutRequests = brokerEmails
@@ -125,6 +134,12 @@ export function RequestList() {
           Manage your data deletion requests
         </p>
       </div>
+
+      {createWarning && (
+        <div className="rounded-md border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-900">
+          {createWarning}
+        </div>
+      )}
 
       {/* Create New Requests */}
       {brokersWithoutRequests && brokersWithoutRequests.length > 0 && (

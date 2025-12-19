@@ -319,8 +319,15 @@ def scan_for_responses_task(self, user_id: str, days_back: int = 7):
                 broker_response.deletion_request_id = request_id
                 broker_response.matched_by = matched_by
 
-                # Auto-update request status if confidence is high enough
-                if confidence >= 0.6:
+                # Auto-update request status; trust thread matches even at lower confidence
+                should_update_status = confidence >= 0.6
+                if matched_by == "thread_id" and response_type in (
+                    ResponseType.CONFIRMATION,
+                    ResponseType.REJECTION,
+                ):
+                    should_update_status = True
+
+                if should_update_status:
                     request = db.query(DeletionRequest).filter(
                         DeletionRequest.id == request_id
                     ).first()

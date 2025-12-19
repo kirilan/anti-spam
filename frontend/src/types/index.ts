@@ -86,6 +86,7 @@ export interface DeletionRequest {
   notes: string | null
   created_at: string
   updated_at: string
+   warning?: string | null
 }
 
 export interface DeletionRequestCreate {

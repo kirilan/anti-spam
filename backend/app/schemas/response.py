@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Literal
 
 
 class BrokerResponseBase(BaseModel):
@@ -29,3 +29,18 @@ class BrokerResponse(BrokerResponseBase):
 
 class ScanResponsesRequest(BaseModel):
     days_back: int = 7
+
+
+ResponseTypeLiteral = Literal[
+    "confirmation",
+    "rejection",
+    "acknowledgment",
+    "request_info",
+    "unknown",
+]
+
+
+class ClassifyResponseRequest(BaseModel):
+    response_type: ResponseTypeLiteral
+    confidence_score: Optional[float] = None
+    deletion_request_id: Optional[str] = None

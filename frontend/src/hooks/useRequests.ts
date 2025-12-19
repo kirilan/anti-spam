@@ -28,6 +28,10 @@ export function useCreateRequest() {
     mutationFn: (brokerId: string) => requestsApi.create(userId!, { broker_id: brokerId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['requests'] })
+      queryClient.invalidateQueries({ queryKey: ['analytics'] })
+      queryClient.invalidateQueries({ queryKey: ['analytics', 'stats'] })
+      queryClient.invalidateQueries({ queryKey: ['analytics', 'timeline'] })
+      queryClient.invalidateQueries({ queryKey: ['analytics', 'broker-ranking'] })
     },
   })
 }
@@ -47,6 +51,10 @@ export function useUpdateRequestStatus() {
     }) => requestsApi.updateStatus(requestId, status, notes),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['requests'] })
+      queryClient.invalidateQueries({ queryKey: ['analytics'] })
+      queryClient.invalidateQueries({ queryKey: ['analytics', 'stats'] })
+      queryClient.invalidateQueries({ queryKey: ['analytics', 'timeline'] })
+      queryClient.invalidateQueries({ queryKey: ['analytics', 'broker-ranking'] })
     },
   })
 }

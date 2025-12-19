@@ -20,7 +20,7 @@ from app.dependencies.auth import get_current_user
 router = APIRouter()
 
 
-def serialize_request(req: DeletionRequestModel) -> DeletionRequest:
+def serialize_request(req: DeletionRequestModel, warning: str | None = None) -> DeletionRequest:
     return DeletionRequest(
         id=str(req.id),
         user_id=str(req.user_id),
@@ -38,7 +38,8 @@ def serialize_request(req: DeletionRequestModel) -> DeletionRequest:
         last_send_error=req.last_send_error,
         next_retry_at=req.next_retry_at,
         created_at=req.created_at,
-        updated_at=req.updated_at
+        updated_at=req.updated_at,
+        warning=warning
     )
 
 
@@ -66,7 +67,7 @@ def create_deletion_request(
     activity_service = ActivityLogService(db)
 
     try:
-        deletion_request = service.create_request(user, broker, request.framework)
+        deletion_request, warning = service.create_request(user, broker, request.framework)
 
         # Log activity
         activity_service.log_activity(
@@ -77,7 +78,7 @@ def create_deletion_request(
             deletion_request_id=str(deletion_request.id)
         )
 
-        return serialize_request(deletion_request)
+        return serialize_request(deletion_request, warning)
 
     except Exception as e:
         # Log error

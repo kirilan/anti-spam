@@ -21,17 +21,37 @@ class DeletionRequestService:
         user: User,
         broker: DataBroker,
         framework: str = "GDPR/CCPA"
-    ) -> DeletionRequest:
-        """Create a deletion request for a specific broker"""
+    ) -> tuple[DeletionRequest, str | None]:
+        """Create a deletion request for a specific broker
 
-        # Check if request already exists
-        existing = self.db.query(DeletionRequest).filter(
-            DeletionRequest.user_id == user.id,
-            DeletionRequest.broker_id == broker.id
-        ).first()
+        Returns:
+            (request, warning_message)
+        """
+
+        warning = None
+
+        # Check for most recent request to this broker
+        existing = (
+            self.db.query(DeletionRequest)
+            .filter(
+                DeletionRequest.user_id == user.id,
+                DeletionRequest.broker_id == broker.id
+            )
+            .order_by(DeletionRequest.created_at.desc())
+            .first()
+        )
 
         if existing:
-            raise Exception(f"Deletion request already exists for {broker.name}")
+            if existing.status in (RequestStatus.PENDING, RequestStatus.SENT):
+                raise Exception(f"Deletion request already in progress for {broker.name}")
+
+            # If the last request was within 30 days, allow but warn
+            days_since = (datetime.utcnow() - existing.created_at).days
+            if days_since < 30:
+                warning = (
+                    f"You requested deletion from {broker.name} {days_since} day(s) ago. "
+                    "Submitting a new request now may not be necessary."
+                )
 
         # Generate email
         subject, body = self.templates.generate_deletion_request_email(
@@ -53,7 +73,7 @@ class DeletionRequestService:
         self.db.commit()
         self.db.refresh(request)
 
-        return request
+        return request, warning
 
     def get_user_requests(self, user_id: str) -> List[DeletionRequest]:
         """Get all deletion requests for a user"""
