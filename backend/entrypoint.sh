@@ -22,6 +22,9 @@ RUN_DB_MIGRATIONS=${RUN_DB_MIGRATIONS:-true}
 
 if [ "$RUN_DB_MIGRATIONS" = "true" ] || [ "$RUN_DB_MIGRATIONS" = "1" ]; then
   echo ""
+  echo "Ensuring base tables exist..."
+  python -c "from app.database import init_db; init_db()"
+  echo ""
   echo "Running database migrations..."
   if python migrations/run_migrations.py; then
       echo "✓ Migrations complete"

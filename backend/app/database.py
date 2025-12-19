@@ -21,4 +21,6 @@ def get_db():
 
 def init_db():
     """Initialize database tables"""
+    # Import models to register them with SQLAlchemy's metadata
+    import app.models  # noqa: F401
     Base.metadata.create_all(bind=engine)

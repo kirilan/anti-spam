@@ -30,6 +30,9 @@ MANIFEST
 pip-log.txt
 pip-delete-this-directory.txt
 
+# Frontend source lib is intentional
+!frontend/src/lib/
+
 # Virtual Environments
 venv/
 env/

@@ -14,6 +14,9 @@ EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
 
+-- Ensure UUID generation function exists
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 -- Create broker_responses table
 CREATE TABLE IF NOT EXISTS broker_responses (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
