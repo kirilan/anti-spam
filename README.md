@@ -36,6 +36,7 @@ A comprehensive web application that scans your Gmail inbox for data broker comm
 ## 📋 Table of Contents
 
 - [Features](#-features)
+- [Hourly Response Scan Workflow](#-hourly-response-scan-workflow)
 - [Tech Stack](#-tech-stack)
 - [Architecture](#-architecture)
 - [Getting Started](#-getting-started)
@@ -106,6 +107,23 @@ A comprehensive web application that scans your Gmail inbox for data broker comm
 - Collapsible "Manual Broker Entry" form for quickly adding new brokers (name, domains, privacy email, opt-out URL, category)
 - Broker cards highlight whether a deletion request already exists and disable the CTA accordingly
 - Inline validation/error handling bubbled up from the backend
+
+---
+
+## ⏱️ Hourly Response Scan Workflow
+
+During active development, the response scan runs hourly via Celery Beat. This job rechecks Gmail for broker replies and updates request statuses.
+
+1. Celery Beat triggers `scan_all_users_for_responses` at the top of each hour (UTC).
+2. The task finds users with sent deletion requests and enqueues `scan_for_responses_task` per user.
+3. Each per-user task builds a Gmail query from broker domains and the oldest sent request date (or 7-day fallback).
+4. Gmail API searches the inbox and fetches up to 50 full messages matching that query.
+5. Existing responses are reclassified; new responses are created if the Gmail message ID is new.
+6. Responses are matched to deletion requests and can update status on high confidence (or thread match).
+7. Results are committed and logged as `response_scanned` with JSON details and `source="automated"`.
+8. The Scan History panel shows these runs alongside manual mailbox scans.
+
+To switch back to daily scheduling, adjust the Beat schedule in `backend/app/celery_app.py`.
 
 ---
 
