@@ -15,6 +15,8 @@ import type {
   BrokerResponse,
   TaskQueueHealth,
   User,
+  AiSettingsStatus,
+  AiClassifyResult,
 } from '@/types'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
@@ -159,6 +161,11 @@ export const requestsApi = {
     const response = await api.post<DeletionRequest>(`/requests/${requestId}/send`)
     return response.data
   },
+
+  aiClassify: async (requestId: string) => {
+    const response = await api.post<AiClassifyResult>(`/requests/${requestId}/ai-classify`)
+    return response.data
+  },
 }
 
 // Tasks API
@@ -213,6 +220,24 @@ export const responsesApi = {
     payload: { response_type: BrokerResponse['response_type']; deletion_request_id?: string | null }
   ) => {
     const response = await api.patch<BrokerResponse>(`/responses/${responseId}/classify`, payload)
+    return response.data
+  },
+}
+
+// AI Settings API
+export const aiApi = {
+  getKeyStatus: async () => {
+    const response = await api.get<AiSettingsStatus>('/ai/key/status')
+    return response.data
+  },
+
+  setKey: async (payload: { api_key?: string; model?: string }) => {
+    const response = await api.put<AiSettingsStatus>('/ai/key', payload)
+    return response.data
+  },
+
+  deleteKey: async () => {
+    const response = await api.delete<AiSettingsStatus>('/ai/key')
     return response.data
   },
 }

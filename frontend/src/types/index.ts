@@ -101,6 +101,35 @@ export interface EmailPreview {
   broker_name: string
 }
 
+// AI settings/types
+export interface AiSettingsStatus {
+  has_key: boolean
+  updated_at: string | null
+  model: string
+  available_models: string[]
+}
+
+export interface AiClassifyResult {
+  request_id: string
+  updated_responses: number
+  status_updated: boolean
+  request_status: RequestStatus
+  model: string
+  ai_output: AiThreadClassification
+}
+
+export interface AiResponseClassification {
+  response_id: string
+  response_type: BrokerResponseType
+  confidence_score: number
+  rationale?: string | null
+}
+
+export interface AiThreadClassification {
+  model: string
+  responses: AiResponseClassification[]
+}
+
 // Task types
 export interface TaskResponse {
   task_id: string

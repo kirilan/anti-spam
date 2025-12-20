@@ -19,6 +19,9 @@ class User(Base):
     # Encrypted OAuth tokens
     encrypted_access_token = Column(Text, nullable=True)
     encrypted_refresh_token = Column(Text, nullable=True)
+    encrypted_gemini_api_key = Column(Text, nullable=True)
+    gemini_key_updated_at = Column(DateTime, nullable=True)
+    gemini_model = Column(String, nullable=True)
 
     # Scanner metadata
     last_scan_at = Column(DateTime, nullable=True)
@@ -58,4 +61,20 @@ class User(Base):
         """Get decrypted refresh token"""
         if self.encrypted_refresh_token:
             return self.decrypt_token(self.encrypted_refresh_token)
+        return None
+
+    def set_gemini_api_key(self, api_key: str):
+        """Set encrypted Gemini API key"""
+        self.encrypted_gemini_api_key = self.encrypt_token(api_key)
+        self.gemini_key_updated_at = datetime.utcnow()
+
+    def clear_gemini_api_key(self):
+        """Remove stored Gemini API key"""
+        self.encrypted_gemini_api_key = None
+        self.gemini_key_updated_at = datetime.utcnow()
+
+    def get_gemini_api_key(self) -> str:
+        """Get decrypted Gemini API key"""
+        if self.encrypted_gemini_api_key:
+            return self.decrypt_token(self.encrypted_gemini_api_key)
         return None

@@ -13,7 +13,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
+      interval: 30s
       timeout: 5s
       retries: 5
 
@@ -49,6 +49,16 @@ services:
       redis:
         condition: service_healthy
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()\""
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
 
   celery-worker:
     build:
@@ -96,6 +106,29 @@ services:
       - "3000:80"
     depends_on:
       - backend
+    healthcheck:
+      test: ["CMD-SHELL", "test -s /usr/share/nginx/html/index.html"]
+      interval: 30s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  startup-notice:
+    image: alpine:3.19
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+      celery-worker:
+        condition: service_started
+      celery-beat:
+        condition: service_started
+    command: ["sh", "-c", "echo 'All services are healthy and ready.'"]
 
   caddy:
     image: caddy:2.7

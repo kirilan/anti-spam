@@ -6,8 +6,9 @@ import { useRequests, useCreateRequest } from '@/hooks/useRequests'
 import { useEmailScans } from '@/hooks/useEmails'
 import { useBrokers } from '@/hooks/useBrokers'
 import { useResponses } from '@/hooks/useResponses'
-import { DeletionRequest, EmailScan, BrokerResponse, BrokerResponseType } from '@/types'
+import { DeletionRequest, EmailScan, BrokerResponse, BrokerResponseType, AiClassifyResult } from '@/types'
 import { EmailPreviewDialog } from './EmailPreviewDialog'
+import { AiResultDialog } from './AiResultDialog'
 import { useQueryClient } from '@tanstack/react-query'
 import {
   FileText,
@@ -21,7 +22,8 @@ import {
   Send,
   Calendar,
   History,
-  MessageSquare
+  MessageSquare,
+  Sparkles
 } from 'lucide-react'
 
 export function RequestList() {
@@ -34,6 +36,11 @@ export function RequestList() {
   const [previewRequest, setPreviewRequest] = useState<DeletionRequest | null>(null)
   const [creatingFor, setCreatingFor] = useState<string | null>(null)
   const [sendingRequestId, setSendingRequestId] = useState<string | null>(null)
+  const [aiProcessingRequestId, setAiProcessingRequestId] = useState<string | null>(null)
+  const [aiErrorRequestId, setAiErrorRequestId] = useState<string | null>(null)
+  const [aiErrorMessage, setAiErrorMessage] = useState<string | null>(null)
+  const [aiResult, setAiResult] = useState<AiClassifyResult | null>(null)
+  const [aiResultRequest, setAiResultRequest] = useState<DeletionRequest | null>(null)
   const [permissionError, setPermissionError] = useState(false)
   const [createWarning, setCreateWarning] = useState<string | null>(null)
 
@@ -100,6 +107,29 @@ export function RequestList() {
       await refetch()
     } finally {
       setSendingRequestId(null)
+    }
+  }
+
+  const handleAiAssist = async (requestId: string) => {
+    setAiProcessingRequestId(requestId)
+    setAiErrorRequestId(null)
+    setAiErrorMessage(null)
+    try {
+      const { requestsApi } = await import('@/services/api')
+      const result = await requestsApi.aiClassify(requestId)
+      const matchedRequest = (requests || []).find((item) => item.id === requestId) || null
+      setAiResult(result)
+      setAiResultRequest(matchedRequest)
+      await refetch()
+      queryClient.invalidateQueries({ queryKey: ['responses'] })
+      queryClient.invalidateQueries({ queryKey: ['requests'] })
+      queryClient.invalidateQueries({ queryKey: ['analytics'] })
+    } catch (error: any) {
+      console.error('Failed to run AI classification:', error)
+      setAiErrorRequestId(requestId)
+      setAiErrorMessage(error.response?.data?.detail || 'AI classification failed.')
+    } finally {
+      setAiProcessingRequestId(null)
     }
   }
 
@@ -205,6 +235,9 @@ export function RequestList() {
               onPreview={() => setPreviewRequest(request)}
               onSendEmail={handleSendEmail}
               isSending={sendingRequestId === request.id}
+              onAiAssist={handleAiAssist}
+              isAiProcessing={aiProcessingRequestId === request.id}
+              aiErrorMessage={aiErrorRequestId === request.id ? aiErrorMessage : null}
               responses={responsesByRequest.get(request.id) || []}
             />
           ))}
@@ -225,6 +258,16 @@ export function RequestList() {
         request={previewRequest}
         responses={previewResponses}
         onClose={() => setPreviewRequest(null)}
+      />
+
+      <AiResultDialog
+        result={aiResult}
+        request={aiResultRequest}
+        brokerName={aiResultRequest ? brokerMap.get(aiResultRequest.broker_id) || 'Unknown Broker' : undefined}
+        onClose={() => {
+          setAiResult(null)
+          setAiResultRequest(null)
+        }}
       />
 
       {/* Permission Error Dialog */}
@@ -292,6 +335,9 @@ function RequestCard({
   onPreview,
   onSendEmail,
   isSending,
+  onAiAssist,
+  isAiProcessing,
+  aiErrorMessage,
   responses
 }: {
   request: DeletionRequest
@@ -299,6 +345,9 @@ function RequestCard({
   onPreview: () => void
   onSendEmail: (requestId: string) => void
   isSending: boolean
+  onAiAssist: (requestId: string) => void
+  isAiProcessing: boolean
+  aiErrorMessage: string | null
   responses: BrokerResponse[]
 }) {
   const statusConfig = {
@@ -521,6 +570,24 @@ function RequestCard({
                 </Button>
               )}
               <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onAiAssist(request.id)}
+                disabled={isAiProcessing}
+              >
+                {isAiProcessing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                    AI running...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4 mr-1" />
+                    AI Assist
+                  </>
+                )}
+              </Button>
+              <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowTimeline((prev) => !prev)}
@@ -537,6 +604,9 @@ function RequestCard({
             )}
             {request.last_send_error && (
               <p className="text-xs text-destructive mt-1">{request.last_send_error}</p>
+            )}
+            {aiErrorMessage && (
+              <p className="text-xs text-destructive mt-1">{aiErrorMessage}</p>
             )}
 
             {showTimeline && (

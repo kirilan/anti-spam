@@ -31,6 +31,9 @@ class Settings(BaseSettings):
     task_trigger_rate_limit: int = 8
     task_trigger_rate_window_seconds: int = 60 * 60
 
+    # Gemini AI configuration
+    gemini_timeout_seconds: int = 20
+
     class Config:
         env_file = ".env"
         case_sensitive = False
