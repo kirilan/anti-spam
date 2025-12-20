@@ -54,6 +54,36 @@ export interface EmailScan {
   created_at: string
 }
 
+export interface EmailScanPage {
+  items: EmailScan[]
+  total: number
+  limit: number
+  offset: number
+}
+
+export interface ScanHistoryEntry {
+  id: string
+  performed_at: string
+  scan_type: string
+  source: string
+  days_back: number | null
+  max_emails: number | null
+  total_scanned: number | null
+  broker_emails_found: number | null
+  sent_requests_scanned: number | null
+  responses_found: number | null
+  responses_updated: number | null
+  requests_updated: number | null
+  message: string
+}
+
+export interface ScanHistoryPage {
+  items: ScanHistoryEntry[]
+  total: number
+  limit: number
+  offset: number
+}
+
 export interface ScanRequest {
   days_back: number
   max_emails: number

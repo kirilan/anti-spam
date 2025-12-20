@@ -19,7 +19,7 @@ router = APIRouter()
 
 
 class ScanTaskRequest(BaseModel):
-    days_back: int = 90
+    days_back: int = 1
     max_emails: int = 100
 
 

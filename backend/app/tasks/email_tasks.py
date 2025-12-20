@@ -1,3 +1,4 @@
+import json
 from celery import current_task
 from datetime import datetime, timedelta
 from typing import Dict, List
@@ -25,7 +26,7 @@ def _parse_email_date(date_str: str):
 
 
 @celery_app.task(bind=True, max_retries=2)
-def scan_inbox_task(self, user_id: str, days_back: int = 90, max_emails: int = 100):
+def scan_inbox_task(self, user_id: str, days_back: int = 1, max_emails: int = 100):
     """
     Background task to scan user's inbox for data broker emails.
 
@@ -83,7 +84,17 @@ def scan_inbox_task(self, user_id: str, days_back: int = 90, max_emails: int = 1
             user_id=user_id,
             activity_type=ActivityType.EMAIL_SCANNED,
             message=f"Email scan completed: {len(scans)} emails scanned, {broker_count} broker emails found",
-            details=f"Days back: {days_back}, Max emails: {max_emails}"
+            details=json.dumps(
+                {
+                    "scan_type": "email",
+                    "source": "manual",
+                    "days_back": days_back,
+                    "max_emails": max_emails,
+                    "total_scanned": len(scans),
+                    "broker_emails_found": broker_count,
+                },
+                ensure_ascii=True,
+            ),
         )
 
         return {
@@ -142,7 +153,7 @@ def scan_inbox_task(self, user_id: str, days_back: int = 90, max_emails: int = 1
 
 
 @celery_app.task(bind=True, max_retries=2)
-def scan_for_responses_task(self, user_id: str, days_back: int = 7):
+def scan_for_responses_task(self, user_id: str, days_back: int = 7, source: str = "manual"):
     """
     Background task to scan for broker responses to deletion requests.
 
@@ -356,7 +367,18 @@ def scan_for_responses_task(self, user_id: str, days_back: int = 7):
             user_id=user_id,
             activity_type=ActivityType.RESPONSE_SCANNED,
             message=f"Response scan completed: {responses_created} new responses, {responses_updated} re-classified, {requests_updated} requests updated",
-            details=f"Sent requests scanned: {len(sent_requests)}, Days back: {days_back}"
+            details=json.dumps(
+                {
+                    "scan_type": "responses",
+                    "source": source,
+                    "days_back": days_back,
+                    "sent_requests_scanned": len(sent_requests),
+                    "responses_found": responses_created,
+                    "responses_updated": responses_updated,
+                    "requests_updated": requests_updated,
+                },
+                ensure_ascii=True,
+            ),
         )
 
         return {
@@ -474,7 +496,7 @@ def scan_all_users_for_responses(self):
                 pass  # Don't fail on logging errors
 
             # Trigger scan for each user asynchronously
-            result = scan_for_responses_task.delay(user_id_str, days_back=7)
+            result = scan_for_responses_task.delay(user_id_str, days_back=7, source="automated")
             tasks_triggered.append({
                 'user_id': user_id_str,
                 'task_id': result.id

@@ -20,7 +20,7 @@ class EmailScanner:
     def scan_inbox(
         self,
         user: User,
-        days_back: int = 90,
+        days_back: int = 1,
         max_emails: int = 100
     ) -> List[EmailScan]:
         """Scan user's Gmail inbox for data broker emails"""

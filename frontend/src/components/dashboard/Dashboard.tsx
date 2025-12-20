@@ -138,9 +138,9 @@ export function Dashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Recent Broker Responses</CardTitle>
-            <Link to="/responses">
+            <Link to="/requests">
               <Button variant="ghost" size="sm">
-                View All
+                View Requests
               </Button>
             </Link>
           </CardHeader>
@@ -181,7 +181,7 @@ export function Dashboard() {
               <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
                 <MessageSquare className="h-12 w-12 mb-2" />
                 <p className="text-sm">No responses yet</p>
-                <Link to="/responses" className="mt-2">
+                <Link to="/requests" className="mt-2">
                   <Button variant="outline" size="sm">
                     Scan for Responses
                   </Button>
@@ -203,10 +203,10 @@ export function Dashboard() {
                 Scan Inbox for Brokers
               </Button>
             </Link>
-            <Link to="/responses" className="block">
+            <Link to="/requests" className="block">
               <Button className="w-full justify-start" variant="outline">
                 <MessageSquare className="mr-2 h-4 w-4" />
-                Check Broker Responses
+                Check Responses in Requests
               </Button>
             </Link>
             <Link to="/analytics" className="block">

@@ -5,19 +5,36 @@ import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { tasksApi } from '@/services/api'
 import { useAuthStore } from '@/stores/authStore'
+import { useEmailScansPaged, useScanHistory } from '@/hooks/useEmails'
 import { getErrorMessage, getStatusMessage } from '@/utils/errorMessages'
-import { TaskStatus } from '@/types'
-import { Loader2, Play, CheckCircle, XCircle, Mail, RotateCw, Clock, AlertTriangle } from 'lucide-react'
+import { TaskStatus, EmailScan } from '@/types'
+import {
+  Loader2,
+  Play,
+  CheckCircle,
+  XCircle,
+  Mail,
+  RotateCw,
+  Clock,
+  AlertTriangle
+} from 'lucide-react'
 
 export function EmailScanner() {
   const { userId, user } = useAuthStore()
   const [taskId, setTaskId] = useState<string | null>(null)
   const [taskStatus, setTaskStatus] = useState<TaskStatus | null>(null)
   const [isStarting, setIsStarting] = useState(false)
-  const [daysBack, setDaysBack] = useState(30)
-  const [maxEmails, setMaxEmails] = useState(300)
+  const [daysBack, setDaysBack] = useState(1)
+  const [maxEmails, setMaxEmails] = useState(100)
   const [scanError, setScanError] = useState<{ message: string; retryAfter?: number } | null>(null)
   const [retryCountdown, setRetryCountdown] = useState<number | null>(null)
+  const [showBrokersOnly, setShowBrokersOnly] = useState(true)
+  const [resultsPage, setResultsPage] = useState(0)
+  const [historyPage, setHistoryPage] = useState(0)
+  const pageSize = 10
+
+  const scanResults = useEmailScansPaged(showBrokersOnly, pageSize, resultsPage * pageSize)
+  const scanHistory = useScanHistory(pageSize, historyPage * pageSize)
 
   // Poll for task status
   useEffect(() => {
@@ -119,6 +136,10 @@ export function EmailScanner() {
   const isScanning = taskStatus?.state === 'PROGRESS' || taskStatus?.state === 'PENDING' || taskStatus?.state === 'STARTED'
   const isComplete = taskStatus?.state === 'SUCCESS'
   const isFailed = taskStatus?.state === 'FAILURE'
+
+  useEffect(() => {
+    setResultsPage(0)
+  }, [showBrokersOnly])
 
   const getLastScanText = () => {
     if (!user?.last_scan_at) return 'Never scanned'
@@ -309,6 +330,258 @@ export function EmailScanner() {
           </CardContent>
         </Card>
       </div>
+
+      <div className="space-y-6">
+        <Card>
+          <CardHeader className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+            <div>
+              <CardTitle>Scan History</CardTitle>
+              <CardDescription>Recent email scan jobs and results</CardDescription>
+            </div>
+            {scanHistory.data && (
+              <Badge variant="outline">
+                Total scans: {scanHistory.data.total}
+              </Badge>
+            )}
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {scanHistory.isLoading ? (
+              <div className="flex items-center justify-center py-8 text-muted-foreground">
+                <Loader2 className="h-6 w-6 animate-spin" />
+              </div>
+            ) : scanHistory.data?.items.length ? (
+              <div className="space-y-3">
+                {scanHistory.data.items.map((entry) => (
+                  <div key={entry.id} className="rounded-md border bg-muted/30 p-3">
+                    <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium">{entry.message}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(entry.performed_at).toLocaleString()}
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                        <Badge variant="outline">
+                          {entry.scan_type === 'responses' ? 'Response Scan' : 'Mailbox Scan'}
+                        </Badge>
+                        <Badge variant="outline">{entry.source}</Badge>
+                        {entry.days_back !== null && (
+                          <Badge variant="secondary">{entry.days_back} day(s)</Badge>
+                        )}
+                        {entry.max_emails !== null && (
+                          <Badge variant="secondary">{entry.max_emails} emails</Badge>
+                        )}
+                        {entry.total_scanned !== null && (
+                          <Badge variant="secondary">{entry.total_scanned} scanned</Badge>
+                        )}
+                        {entry.broker_emails_found !== null && (
+                          <Badge variant="secondary">{entry.broker_emails_found} brokers</Badge>
+                        )}
+                        {entry.sent_requests_scanned !== null && (
+                          <Badge variant="secondary">
+                            {entry.sent_requests_scanned} requests
+                          </Badge>
+                        )}
+                        {entry.responses_found !== null && (
+                          <Badge variant="secondary">{entry.responses_found} new</Badge>
+                        )}
+                        {entry.responses_updated !== null && (
+                          <Badge variant="secondary">
+                            {entry.responses_updated} re-classified
+                          </Badge>
+                        )}
+                        {entry.requests_updated !== null && (
+                          <Badge variant="secondary">
+                            {entry.requests_updated} updated
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">No scans yet.</p>
+            )}
+
+            {scanHistory.data && scanHistory.data.total > pageSize && (
+              <div className="flex items-center justify-between text-sm text-muted-foreground">
+                <span>
+                  Page {historyPage + 1} of {Math.ceil(scanHistory.data.total / pageSize)}
+                </span>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={historyPage === 0}
+                    onClick={() => setHistoryPage((prev) => Math.max(prev - 1, 0))}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={(historyPage + 1) * pageSize >= scanHistory.data.total}
+                    onClick={() =>
+                      setHistoryPage((prev) =>
+                        (prev + 1) * pageSize >= scanHistory.data.total ? prev : prev + 1
+                      )
+                    }
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div>
+              <CardTitle>Email Results</CardTitle>
+              <CardDescription>
+                Showing {showBrokersOnly ? 'broker emails only' : 'all scanned emails'}
+              </CardDescription>
+            </div>
+            {scanResults.data && (
+              <Badge variant="outline">
+                Total emails: {scanResults.data.total}
+              </Badge>
+            )}
+            <Button
+              variant={showBrokersOnly ? 'default' : 'outline'}
+              onClick={() => setShowBrokersOnly((prev) => !prev)}
+            >
+              <AlertTriangle className="mr-2 h-4 w-4" />
+              {showBrokersOnly ? 'Showing Brokers Only' : 'Show Brokers Only'}
+            </Button>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {scanResults.isLoading ? (
+              <div className="flex items-center justify-center py-8 text-muted-foreground">
+                <Loader2 className="h-6 w-6 animate-spin" />
+              </div>
+            ) : scanResults.data?.items.length ? (
+              <div className="space-y-4">
+                {scanResults.data.items.map((email) => (
+                  <EmailCard key={email.id} email={email} />
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                <Mail className="h-10 w-10 mb-2" />
+                <p className="text-sm">No emails found for this view.</p>
+              </div>
+            )}
+
+            {scanResults.data && scanResults.data.total > pageSize && (
+              <div className="flex items-center justify-between text-sm text-muted-foreground">
+                <span>
+                  Page {resultsPage + 1} of {Math.ceil(scanResults.data.total / pageSize)}
+                </span>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={resultsPage === 0}
+                    onClick={() => setResultsPage((prev) => Math.max(prev - 1, 0))}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={(resultsPage + 1) * pageSize >= scanResults.data.total}
+                    onClick={() =>
+                      setResultsPage((prev) =>
+                        (prev + 1) * pageSize >= scanResults.data.total ? prev : prev + 1
+                      )
+                    }
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
+  )
+}
+
+function EmailCard({ email }: { email: EmailScan }) {
+  const confidencePercent = email.confidence_score
+    ? Math.round(email.confidence_score * 100)
+    : null
+
+  const truncatedPreview = email.body_preview
+    ? email.body_preview.length > 150
+      ? email.body_preview.substring(0, 150) + '...'
+      : email.body_preview
+    : null
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between">
+          <div className="space-y-1 flex-1">
+            <CardTitle className="text-base font-medium">
+              {email.subject || '(No Subject)'}
+            </CardTitle>
+            <div className="space-y-0.5">
+              <p className="text-sm text-muted-foreground">
+                <span className="font-medium">From:</span> {email.sender_email}
+              </p>
+              {email.recipient_email && (
+                <p className="text-sm text-muted-foreground">
+                  <span className="font-medium">To:</span> {email.recipient_email}
+                </p>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {email.is_broker_email ? (
+              <Badge variant="destructive">
+                <AlertTriangle className="mr-1 h-3 w-3" />
+                Data Broker
+              </Badge>
+            ) : (
+              <Badge variant="secondary">
+                <CheckCircle className="mr-1 h-3 w-3" />
+                Safe
+              </Badge>
+            )}
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {truncatedPreview && (
+          <div className="text-sm text-muted-foreground bg-muted/50 rounded-md p-3 border">
+            <p className="line-clamp-3">{truncatedPreview}</p>
+          </div>
+        )}
+        <div className="flex items-center justify-between text-sm">
+          <div className="flex items-center gap-4">
+            {email.broker_id && (
+              <span className="text-muted-foreground">
+                Broker ID: {email.broker_id}
+              </span>
+            )}
+            {confidencePercent !== null && (
+              <span className="text-muted-foreground">
+                Confidence: {confidencePercent}%
+              </span>
+            )}
+          </div>
+          <span className="text-muted-foreground">
+            {email.received_date
+              ? new Date(email.received_date).toLocaleDateString()
+              : 'Unknown date'}
+          </span>
+        </div>
+      </CardContent>
+    </Card>
   )
 }

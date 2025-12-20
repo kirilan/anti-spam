@@ -27,7 +27,7 @@ class EmailScan(EmailScanBase):
 
 
 class ScanRequest(BaseModel):
-    days_back: int = 90
+    days_back: int = 1
     max_emails: int = 100
 
 
@@ -36,3 +36,33 @@ class ScanResult(BaseModel):
     total_scanned: int
     broker_emails_found: int
     scans: list[EmailScan]
+
+
+class EmailScanPage(BaseModel):
+    items: list[EmailScan]
+    total: int
+    limit: int
+    offset: int
+
+
+class ScanHistoryEntry(BaseModel):
+    id: str
+    performed_at: datetime
+    scan_type: str
+    source: str
+    days_back: Optional[int] = None
+    max_emails: Optional[int] = None
+    total_scanned: Optional[int] = None
+    broker_emails_found: Optional[int] = None
+    sent_requests_scanned: Optional[int] = None
+    responses_found: Optional[int] = None
+    responses_updated: Optional[int] = None
+    requests_updated: Optional[int] = None
+    message: str
+
+
+class ScanHistoryPage(BaseModel):
+    items: list[ScanHistoryEntry]
+    total: int
+    limit: int
+    offset: int

@@ -14,6 +14,28 @@ export function useEmailScans(brokerOnly = false, limit = 1000) {
   })
 }
 
+export function useEmailScansPaged(brokerOnly: boolean, limit: number, offset: number) {
+  const { userId } = useAuthStore()
+
+  return useQuery({
+    queryKey: ['emailScansPaged', userId, brokerOnly, limit, offset],
+    queryFn: () => emailsApi.getScansPaged(userId!, brokerOnly, limit, offset),
+    enabled: !!userId,
+    staleTime: 0,
+  })
+}
+
+export function useScanHistory(limit: number, offset: number) {
+  const { userId } = useAuthStore()
+
+  return useQuery({
+    queryKey: ['scanHistory', userId, limit, offset],
+    queryFn: () => emailsApi.getScanHistory(userId!, limit, offset),
+    enabled: !!userId,
+    staleTime: 0,
+  })
+}
+
 export function useScanInbox() {
   const { userId } = useAuthStore()
   const queryClient = useQueryClient()
@@ -47,6 +69,8 @@ export function useTaskStatus(taskId: string | null) {
       if (data?.state === 'SUCCESS' || data?.state === 'FAILURE') {
         // Invalidate email scans when task completes
         queryClient.invalidateQueries({ queryKey: ['emailScans'] })
+        queryClient.invalidateQueries({ queryKey: ['emailScansPaged'] })
+        queryClient.invalidateQueries({ queryKey: ['scanHistory'] })
         return false
       }
       return 2000 // Poll every 2 seconds

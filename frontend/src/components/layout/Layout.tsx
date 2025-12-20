@@ -5,14 +5,12 @@ import { Button } from '@/components/ui/button'
 import { RateLimitNotice } from './RateLimitNotice'
 import {
   LayoutDashboard,
-  Mail,
   Database,
   FileText,
   LogOut,
   Shield,
   ShieldCheck,
   ScanSearch,
-  MessageSquare,
   BarChart3,
   List,
   Settings,
@@ -21,10 +19,8 @@ import {
 const baseNavItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/scan', label: 'Scan Emails', icon: ScanSearch },
-  { href: '/emails', label: 'Email Results', icon: Mail },
   { href: '/brokers', label: 'Data Brokers', icon: Database },
   { href: '/requests', label: 'Deletion Requests', icon: FileText },
-  { href: '/responses', label: 'Broker Responses', icon: MessageSquare },
   { href: '/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/activity', label: 'Activity Log', icon: List },
   { href: '/settings', label: 'Settings', icon: Settings },

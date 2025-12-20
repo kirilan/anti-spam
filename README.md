@@ -60,6 +60,8 @@ A comprehensive web application that scans your Gmail inbox for data broker comm
 - Keyword-based email classification with confidence scoring
 - Domain matching against known broker databases
 - Customizable scan depth (days back, max emails)
+- Scan history log with pagination and totals
+- Email results live inside the Scan Emails page with broker-only toggle and pagination
 
 ### 📧 **Automated Deletion Requests**
 - Generate legally compliant GDPR/CCPA deletion request emails
@@ -72,11 +74,12 @@ A comprehensive web application that scans your Gmail inbox for data broker comm
 ### 📊 **Response Tracking & Analytics**
 - Automatic detection of broker responses
 - Classify responses: confirmation, rejection, acknowledgment, info request
-- Daily automated scans for new responses (Celery Beat scheduling)
+- Scheduled scans for new responses via Celery Beat (hourly during active development, configurable)
 - Success rate analytics and broker compliance ranking
 - Timeline charts showing request progress over time
 
 - Per-request history timeline (creation, sends, responses, and Gmail rate-limit notices) keeps context in one place
+- Unified Deletion Requests view with inline responses, match method, and manual reclassification
 
 ### 📈 **Interactive Dashboard**
 - Real-time overview of all deletion activities
@@ -85,6 +88,12 @@ A comprehensive web application that scans your Gmail inbox for data broker comm
 - Quick action shortcuts to key features
 
 - Admin-only task queue health widget exposes Celery worker status, queue depth, and refresh controls
+
+### 🤖 **AI Assist**
+- Per-user Gemini API key + model selection in Settings
+- AI Assist reclassifies all responses on a thread when invoked
+- Structured JSON output shown in-app and logged in the activity feed
+- Status updates only when model output is valid JSON with confidence ≥ 0.75
 
 ### 🎯 **Advanced Analytics**
 - Visual charts with recharts library
@@ -168,7 +177,7 @@ A comprehensive web application that scans your Gmail inbox for data broker comm
 2. **Scanning**: Celery worker scans inbox for broker emails
 3. **Request Creation**: User creates deletion requests from dashboard
 4. **Email Sending**: Automated emails sent via Gmail API
-5. **Response Tracking**: Daily Celery Beat task scans for broker responses
+5. **Response Tracking**: Scheduled Celery Beat task scans for broker responses
 6. **Analytics**: Real-time analytics computed from database
 
 ---
@@ -312,10 +321,10 @@ Switching `ENVIRONMENT` back to `development` lets you continue running entirely
 
 1. Go to **Scan Emails** page
 2. Configure scan parameters:
-   - **Days back**: How far to scan (default: 90 days)
+   - **Days back**: How far to scan (default: 1 day)
    - **Max emails**: Maximum emails to process (default: 100)
 3. Click **Start Scan**
-4. View results in **Email Results** page
+4. Review scan history and results in the same Scan Emails screen (broker-only by default)
 
 ### **4. Create Deletion Requests**
 
@@ -328,16 +337,18 @@ Switching `ENVIRONMENT` back to `development` lets you continue running entirely
 
 ### **5. Track Responses**
 
-1. Go to **Broker Responses** page
+1. Go to **Deletion Requests** page
 2. Click **Scan for Responses** to manually check for replies
-3. View response types:
+3. Review responses inline with each request and the match reason
+4. Use manual reclassification or AI Assist as needed
+5. View response types:
    - ✅ **Confirmation** - Deletion confirmed
    - ❌ **Rejection** - Request denied
    - ⏳ **Acknowledgment** - Request received, processing
    - ⚠️ **Info Request** - More information needed
    - ❓ **Unknown** - Unable to classify
-4. Filter by response type
-5. Daily automated scans run at 2 AM UTC
+6. Filter by response type
+7. Scheduled response scans run hourly during development (configurable in Celery Beat)
 
 ### **6. View Analytics**
 
@@ -571,12 +582,28 @@ If you encounter issues:
 
 ## 📰 Recent Updates
 
+### v1.1.x - Current Development (December 2025)
+
+**Highlights**
+- AI Assist with per-user Gemini API key + model selection, structured JSON output dialog, and activity logging
+- Deletion Requests view now includes broker responses, match method, manual reclassification, and AI assist entry point
+- Scan Emails refresh: defaults (1 day/100 emails), paginated results + scan history with totals, broker-only toggle
+- Scan history includes manual and automated response scans
+- Settings page centralizes theme toggle and AI configuration
+
+**Security & Admin**
+- JWT auth guard on every API request with admin-only scopes
+- Per-user `is_admin` gate for privileged actions (Celery health, broker sync, etc.)
+- Manual broker entry UI with backend validation
+- Request timeline entries include Gmail rate-limit messaging
+- Admin task queue health widget for worker status and queue depth
+
 ### v1.0.0 - Current Release (December 2024)
 
 **✅ Completed Features**
 - ✨ **Response Tracking System** - Automatic broker response detection and classification
 - 📊 **Analytics Dashboard** - Success metrics, broker compliance ranking, timeline charts
-- 🤖 **Automated Scheduling** - Daily response scans at 2 AM UTC via Celery Beat
+- 🤖 **Automated Scheduling** - Scheduled response scans via Celery Beat (hourly in dev; configurable)
 - 📧 **Automated Email Sending** - One-click deletion request sending via Gmail API
 - 🎨 **Enhanced Dashboard** - Success rate metrics, recent responses, quick actions
 - 📈 **Interactive Charts** - Timeline visualizations with recharts library
@@ -594,18 +621,6 @@ If you encounter issues:
 - End-to-end encrypted token storage
 
 ---
-
-
-**Made with ❤️ for privacy advocates everywhere**
-
-*Remember: Your data is yours. Exercise your rights.* 🛡️
-## Recent Updates:
-
-- 🔑 **JWT-powered Auth Guard** - Every API now requires bearer tokens minted after Google OAuth, with admin-only scopes
-- 🛡️ **Admin Flag Enforcement** - Per-user `is_admin` gate for Celery health, broker sync, and other privileged actions
-- 🖊️ **Manual Broker Entry** - UI + API support for adding brokers one at a time with validation
-- 📝 **Request Timeline & Rate Limits** - Visual history plus Gmail backoff messaging directly on each request card
-- 💻 **Task Queue Monitoring** - Dashboard tile (admin-only) summarizing Celery worker health and queue depth
 
 ## 🧞️ Roadmap
 
@@ -632,6 +647,6 @@ If you encounter issues:
 
 ---
 
-**Made with ?? for privacy advocates everywhere**
+Made with care for privacy advocates everywhere.
 
-*Remember: Your data is yours. Exercise your rights.* 📧
+Remember: Your data is yours. Exercise your rights.

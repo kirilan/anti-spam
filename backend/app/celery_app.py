@@ -25,8 +25,8 @@ celery_app.conf.update(
 
 # Celery Beat Schedule
 celery_app.conf.beat_schedule = {
-    'scan-responses-daily': {
+    'scan-responses-hourly': {
         'task': 'app.tasks.email_tasks.scan_all_users_for_responses',
-        'schedule': crontab(hour=2, minute=0),  # Run at 2 AM daily
+        'schedule': crontab(minute=0),  # Run at the top of every hour (development)
     },
 }

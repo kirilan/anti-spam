@@ -5,10 +5,8 @@ import { LoginPage } from './components/auth/LoginPage'
 import { AuthCallback } from './components/auth/AuthCallback'
 import { Dashboard } from './components/dashboard/Dashboard'
 import { EmailScanner } from './components/emails/EmailScanner'
-import { EmailList } from './components/emails/EmailList'
 import { BrokerList } from './components/brokers/BrokerList'
 import { RequestList } from './components/requests/RequestList'
-import { ResponseList } from './components/responses/ResponseList'
 import { AnalyticsDashboard } from './components/analytics/AnalyticsDashboard'
 import { ActivityLog } from './components/activity/ActivityLog'
 import { UserManagement } from './components/admin/UserManagement'
@@ -31,10 +29,10 @@ function App() {
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/scan" element={<EmailScanner />} />
-            <Route path="/emails" element={<EmailList />} />
+            <Route path="/emails" element={<Navigate to="/scan" replace />} />
             <Route path="/brokers" element={<BrokerList />} />
             <Route path="/requests" element={<RequestList />} />
-            <Route path="/responses" element={<ResponseList />} />
+            <Route path="/responses" element={<Navigate to="/requests" replace />} />
             <Route path="/analytics" element={<AnalyticsDashboard />} />
             <Route path="/activity" element={<ActivityLog />} />
             <Route path="/settings" element={<SettingsPage />} />

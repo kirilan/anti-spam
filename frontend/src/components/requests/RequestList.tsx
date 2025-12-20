@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { useRequests, useCreateRequest } from '@/hooks/useRequests'
 import { useEmailScans } from '@/hooks/useEmails'
 import { useBrokers } from '@/hooks/useBrokers'
-import { useResponses } from '@/hooks/useResponses'
+import { useResponses, useScanResponses, useClassifyResponse } from '@/hooks/useResponses'
 import { DeletionRequest, EmailScan, BrokerResponse, BrokerResponseType, AiClassifyResult } from '@/types'
 import { EmailPreviewDialog } from './EmailPreviewDialog'
 import { AiResultDialog } from './AiResultDialog'
@@ -23,7 +23,12 @@ import {
   Calendar,
   History,
   MessageSquare,
-  Sparkles
+  Sparkles,
+  RefreshCw,
+  CheckCircle2,
+  HelpCircle,
+  XCircle,
+  AlertCircle
 } from 'lucide-react'
 
 export function RequestList() {
@@ -31,6 +36,7 @@ export function RequestList() {
   const { data: brokerEmails } = useEmailScans(true)
   const { data: brokers } = useBrokers()
   const { data: responses } = useResponses()
+  const scanResponses = useScanResponses()
   const createRequest = useCreateRequest()
   const queryClient = useQueryClient()
   const [previewRequest, setPreviewRequest] = useState<DeletionRequest | null>(null)
@@ -41,6 +47,8 @@ export function RequestList() {
   const [aiErrorMessage, setAiErrorMessage] = useState<string | null>(null)
   const [aiResult, setAiResult] = useState<AiClassifyResult | null>(null)
   const [aiResultRequest, setAiResultRequest] = useState<DeletionRequest | null>(null)
+  const [scanSuccessMessage, setScanSuccessMessage] = useState<string | null>(null)
+  const [scanErrorMessage, setScanErrorMessage] = useState<string | null>(null)
   const [permissionError, setPermissionError] = useState(false)
   const [createWarning, setCreateWarning] = useState<string | null>(null)
 
@@ -110,6 +118,20 @@ export function RequestList() {
     }
   }
 
+  const handleScanResponses = async () => {
+    setScanErrorMessage(null)
+    setScanSuccessMessage(null)
+    try {
+      await scanResponses.mutateAsync(7)
+      setScanSuccessMessage('Scan complete. Responses updated.')
+      setTimeout(() => setScanSuccessMessage(null), 3000)
+    } catch (scanError: any) {
+      console.error('Failed to scan responses:', scanError)
+      setScanErrorMessage(scanError.response?.data?.detail || 'Scan failed.')
+      setTimeout(() => setScanErrorMessage(null), 4000)
+    }
+  }
+
   const handleAiAssist = async (requestId: string) => {
     setAiProcessingRequestId(requestId)
     setAiErrorRequestId(null)
@@ -168,16 +190,49 @@ export function RequestList() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Deletion Requests</h1>
-        <p className="text-muted-foreground">
-          Manage your data deletion requests
-        </p>
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Deletion Requests</h1>
+          <p className="text-muted-foreground">
+            Manage your data deletion requests
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            onClick={handleScanResponses}
+            disabled={scanResponses.isPending}
+          >
+            {scanResponses.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Scanning...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Scan for Responses
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
       {createWarning && (
         <div className="rounded-md border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-900">
           {createWarning}
+        </div>
+      )}
+      {scanSuccessMessage && (
+        <div className="rounded-md border border-green-200 bg-green-50 p-4 text-sm text-green-900 flex items-center gap-2">
+          <CheckCircle2 className="h-4 w-4" />
+          {scanSuccessMessage}
+        </div>
+      )}
+      {scanErrorMessage && (
+        <div className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-900 flex items-center gap-2">
+          <AlertTriangle className="h-4 w-4" />
+          {scanErrorMessage}
         </div>
       )}
 
@@ -321,12 +376,12 @@ interface TimelineEvent {
   onAction?: () => void
 }
 
-const responseTypeConfig: Record<BrokerResponseType, { label: string; color: string; bg: string }> = {
-  confirmation: { label: 'Confirmation', color: 'text-green-600', bg: 'bg-green-50' },
-  rejection: { label: 'Rejection', color: 'text-red-600', bg: 'bg-red-50' },
-  acknowledgment: { label: 'Acknowledged', color: 'text-blue-600', bg: 'bg-blue-50' },
-  request_info: { label: 'Info Requested', color: 'text-yellow-600', bg: 'bg-yellow-50' },
-  unknown: { label: 'Unknown', color: 'text-gray-600', bg: 'bg-gray-50' }
+const responseTypeConfig: Record<BrokerResponseType, { label: string; color: string; bg: string; icon: any }> = {
+  confirmation: { label: 'Confirmation', color: 'text-green-600', bg: 'bg-green-50', icon: CheckCircle },
+  rejection: { label: 'Rejection', color: 'text-red-600', bg: 'bg-red-50', icon: XCircle },
+  acknowledgment: { label: 'Acknowledged', color: 'text-blue-600', bg: 'bg-blue-50', icon: Clock },
+  request_info: { label: 'Info Requested', color: 'text-yellow-600', bg: 'bg-yellow-50', icon: AlertCircle },
+  unknown: { label: 'Unknown', color: 'text-gray-600', bg: 'bg-gray-50', icon: HelpCircle },
 }
 
 function RequestCard({
@@ -350,6 +405,7 @@ function RequestCard({
   aiErrorMessage: string | null
   responses: BrokerResponse[]
 }) {
+  const classifyResponse = useClassifyResponse()
   const statusConfig = {
     pending: { icon: Clock, color: 'text-yellow-500', bg: 'bg-yellow-500/10', label: 'Pending' },
     sent: { icon: Mail, color: 'text-blue-500', bg: 'bg-blue-500/10', label: 'Sent' },
@@ -371,6 +427,8 @@ function RequestCard({
   const config = statusConfig[statusKey as keyof typeof statusConfig] || statusConfig.pending
   const StatusIcon = config.icon
   const responseConfig = latestResponse ? responseTypeConfig[latestResponse.response_type] : null
+  const [responseEdits, setResponseEdits] = useState<Record<string, BrokerResponseType>>({})
+  const [saveStatuses, setSaveStatuses] = useState<Record<string, 'idle' | 'saving' | 'saved' | 'error'>>({})
 
   const [showTimeline, setShowTimeline] = useState(false)
   const nextRetryDate = request.next_retry_at ? new Date(request.next_retry_at) : null
@@ -641,6 +699,131 @@ function RequestCard({
                     )
                   })
                 )}
+              </div>
+            )}
+
+            {responses.length > 0 && (
+              <div className="mt-4 border-t pt-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold">Responses ({responses.length})</p>
+                </div>
+                <div className="space-y-3">
+                  {responses.map((response) => {
+                    const config = responseTypeConfig[response.response_type] || responseTypeConfig.unknown
+                    const Icon = config.icon
+                    const responseDate = formatDate(response.received_date || response.created_at) || 'Unknown'
+                    const responseSelection = responseEdits[response.id] || response.response_type
+                    const saveStatus = saveStatuses[response.id] || 'idle'
+                    return (
+                      <div key={response.id} className="rounded-lg border bg-muted/40 p-4 space-y-3">
+                        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Badge variant="outline" className={`${config.bg} ${config.color}`}>
+                                <Icon className="h-3 w-3 mr-1" />
+                                {config.label}
+                              </Badge>
+                              {response.confidence_score !== null && (
+                                <Badge variant="secondary">
+                                  {Math.round(response.confidence_score * 100)}% confidence
+                                </Badge>
+                              )}
+                              {response.matched_by && (
+                                <Badge variant="outline">
+                                  Matched: {response.matched_by}
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              From: {response.sender_email}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Received: {responseDate}
+                            </p>
+                            {response.subject && (
+                              <p className="text-sm font-medium">{response.subject}</p>
+                            )}
+                          </div>
+                          <div className="space-y-2 md:text-right">
+                            <p className="text-xs text-muted-foreground">
+                              Manual classification (reclassify only)
+                            </p>
+                            <div className="flex flex-wrap gap-2 md:justify-end">
+                              <select
+                                value={responseSelection}
+                                onChange={(event) =>
+                                  setResponseEdits((prev) => ({
+                                    ...prev,
+                                    [response.id]: event.target.value as BrokerResponseType,
+                                  }))
+                                }
+                                className="text-xs border rounded-md px-2 py-1.5 bg-background"
+                              >
+                                <option value="confirmation">Confirmation</option>
+                                <option value="rejection">Rejection</option>
+                                <option value="acknowledgment">Acknowledged</option>
+                                <option value="request_info">Info Requested</option>
+                                <option value="unknown">Unknown</option>
+                              </select>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={async () => {
+                                  try {
+                                    setSaveStatuses((prev) => ({
+                                      ...prev,
+                                      [response.id]: 'saving',
+                                    }))
+                                    await classifyResponse.mutateAsync({
+                                      responseId: response.id,
+                                      responseType: responseSelection,
+                                    })
+                                    setSaveStatuses((prev) => ({
+                                      ...prev,
+                                      [response.id]: 'saved',
+                                    }))
+                                    setTimeout(() => {
+                                      setSaveStatuses((prev) => ({
+                                        ...prev,
+                                        [response.id]: 'idle',
+                                      }))
+                                    }, 2000)
+                                  } catch (saveError) {
+                                    console.error('Failed to classify response', saveError)
+                                    setSaveStatuses((prev) => ({
+                                      ...prev,
+                                      [response.id]: 'error',
+                                    }))
+                                    setTimeout(() => {
+                                      setSaveStatuses((prev) => ({
+                                        ...prev,
+                                        [response.id]: 'idle',
+                                      }))
+                                    }, 3000)
+                                  }
+                                }}
+                                disabled={saveStatus === 'saving'}
+                              >
+                                {saveStatus === 'saving' ? 'Saving...' : 'Save'}
+                              </Button>
+                              {saveStatus === 'saved' && (
+                                <span className="text-xs text-muted-foreground">Saved</span>
+                              )}
+                              {saveStatus === 'error' && (
+                                <span className="text-xs text-muted-foreground">Save failed</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        {response.body_text && (
+                          <div className="rounded-md bg-background/80 p-3 text-xs text-muted-foreground">
+                            {response.body_text}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
             )}
           </div>

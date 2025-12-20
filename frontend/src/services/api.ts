@@ -17,6 +17,8 @@ import type {
   User,
   AiSettingsStatus,
   AiClassifyResult,
+  EmailScanPage,
+  ScanHistoryPage,
 } from '@/types'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
@@ -118,6 +120,20 @@ export const emailsApi = {
     )
     return response.data
   },
+
+  getScansPaged: async (userId: string, brokerOnly = false, limit = 10, offset = 0) => {
+    const response = await api.get<EmailScanPage>(
+      `/emails/scans/paged?user_id=${userId}&broker_only=${brokerOnly}&limit=${limit}&offset=${offset}`
+    )
+    return response.data
+  },
+
+  getScanHistory: async (userId: string, limit = 10, offset = 0) => {
+    const response = await api.get<ScanHistoryPage>(
+      `/emails/scan-history?user_id=${userId}&limit=${limit}&offset=${offset}`
+    )
+    return response.data
+  },
 }
 
 // Deletion Requests API
@@ -170,7 +186,7 @@ export const requestsApi = {
 
 // Tasks API
 export const tasksApi = {
-  startScan: async (userId: string, daysBack = 30, maxEmails = 300) => {
+  startScan: async (userId: string, daysBack = 1, maxEmails = 100) => {
     const response = await api.post<TaskResponse>(`/tasks/scan?user_id=${userId}`, {
       days_back: daysBack,
       max_emails: maxEmails,
