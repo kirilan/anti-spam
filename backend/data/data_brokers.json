@@ -10,7 +10,7 @@
     {
       "name": "Acxiom",
       "domains": ["acxiom.com"],
-      "privacy_email": "privacy@acxiom.com",
+      "privacy_email": "askprivacy@acxiom.com",
       "opt_out_url": "https://isapps.acxiom.com/optout/optout.aspx",
       "category": "data_aggregator"
     },
