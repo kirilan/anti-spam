@@ -62,7 +62,9 @@ def _parse_scan_history(activity: ActivityLog) -> ScanHistoryEntry:
             sent_requests_scanned = int(response_match.group(1))
             days_back = days_back or int(response_match.group(2))
 
-    message_match = re.search(r"Email scan completed:\s*(\d+)\s*emails scanned,\s*(\d+)\s*broker", activity.message)
+    message_match = re.search(
+        r"Email scan completed:\s*(\d+)\s*emails scanned,\s*(\d+)\s*broker", activity.message
+    )
     if message_match:
         total_scanned = total_scanned or int(message_match.group(1))
         broker_emails_found = broker_emails_found or int(message_match.group(2))
@@ -276,10 +278,7 @@ def get_scan_history(
 
     total = base_query.count()
     activities = (
-        base_query.order_by(ActivityLog.created_at.desc())
-        .offset(offset)
-        .limit(limit)
-        .all()
+        base_query.order_by(ActivityLog.created_at.desc()).offset(offset).limit(limit).all()
     )
 
     return ScanHistoryPage(
