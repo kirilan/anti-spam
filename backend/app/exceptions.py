@@ -1,5 +1,3 @@
-
-
 class GmailQuotaExceededError(Exception):
     """Raised when Gmail API returns a quota or rate limit error."""
 

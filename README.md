@@ -177,23 +177,29 @@ A comprehensive web application that scans your Gmail inbox for data broker comm
 ### Prerequisites
 
 - **Docker** and **Docker Compose** (recommended)
-- OR for local development:
-  - **Python 3.11+** with [uv](https://docs.astral.sh/uv/) package manager
-  - **Node.js 20+**
-  - **PostgreSQL 15** and **Redis 7**
-- **Google Cloud Project** with Gmail API enabled
+- **Python 3.11 or 3.12** (not 3.13 - lxml compatibility)
+- **Node.js 20+**
+- **uv** - Python package manager
+- **Google Cloud Project** with Gmail API enabled (for full functionality)
 
-### Quick Start (Docker)
+> **Platform-specific instructions**: See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed Windows/Linux/macOS setup guides.
 
+### Quick Start
+
+**Linux/macOS:**
 ```bash
-# Clone and configure
 git clone https://github.com/kirilan/anti-spam.git
 cd anti-spam
-cp .env.example .env
-# Edit .env with your credentials (see Configuration below)
-
-# Start everything
+./scripts/setup.sh   # or: make setup
 make dev
+```
+
+**Windows (PowerShell):**
+```powershell
+git clone https://github.com/kirilan/anti-spam.git
+cd anti-spam
+.\scripts\setup.ps1
+docker compose up -d
 ```
 
 Access the application:
@@ -456,13 +462,14 @@ anti-spam/
 
 ## 🤝 Contributing
 
-Contributions are welcome! Here's how you can help:
+Contributions are welcome! See **[CONTRIBUTING.md](CONTRIBUTING.md)** for detailed setup instructions for Windows, Linux, and macOS.
 
+### Quick Steps:
 1. **Fork the repository**
-2. **Create a feature branch**: `git checkout -b feature/amazing-feature`
-3. **Commit your changes**: `git commit -m 'Add amazing feature'`
-4. **Push to the branch**: `git push origin feature/amazing-feature`
-5. **Open a Pull Request**
+2. **Set up your environment**: `./scripts/setup.sh` (Linux/macOS) or `.\scripts\setup.ps1` (Windows)
+3. **Create a feature branch**: `git checkout -b feature/amazing-feature`
+4. **Make your changes** (pre-commit hooks run automatically)
+5. **Push and open a Pull Request**
 
 ### **Areas for Contribution**
 - Add more data brokers to `backend/data/data_brokers.json`

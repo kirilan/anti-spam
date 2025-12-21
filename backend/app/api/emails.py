@@ -1,4 +1,3 @@
-
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -36,11 +35,7 @@ def scan_emails(
     activity_service = ActivityLogService(db)
 
     try:
-        scans = scanner.scan_inbox(
-            user,
-            days_back=request.days_back,
-            max_emails=request.max_emails
-        )
+        scans = scanner.scan_inbox(user, days_back=request.days_back, max_emails=request.max_emails)
 
         # Convert to response schema
         scan_responses = [
@@ -57,7 +52,7 @@ def scan_emails(
                 confidence_score=scan.confidence_score,
                 classification_notes=scan.classification_notes,
                 body_preview=scan.body_preview,
-                created_at=scan.created_at
+                created_at=scan.created_at,
             )
             for scan in scans
         ]
@@ -70,7 +65,7 @@ def scan_emails(
             user_id=str(user.id),
             activity_type=ActivityType.EMAIL_SCANNED,
             message=f"Email scan completed: {len(scans)} emails scanned, {broker_emails} broker emails found",
-            details=f"Days back: {request.days_back}, Max emails: {request.max_emails}"
+            details=f"Days back: {request.days_back}, Max emails: {request.max_emails}",
         )
 
         # Log each detected broker
@@ -82,14 +77,14 @@ def scan_emails(
                     message=f"Detected broker email from {scan.sender_email}",
                     details=f"Subject: {scan.subject}, Confidence: {scan.confidence_score}",
                     broker_id=str(scan.broker_id),
-                    email_scan_id=str(scan.id)
+                    email_scan_id=str(scan.id),
                 )
 
         return ScanResult(
             message="Inbox scan completed",
             total_scanned=len(scans),
             broker_emails_found=broker_emails,
-            scans=scan_responses
+            scans=scan_responses,
         )
 
     except Exception as e:
@@ -98,7 +93,7 @@ def scan_emails(
             user_id=str(user.id),
             activity_type=ActivityType.ERROR,
             message="Email scan failed",
-            details=str(e)
+            details=str(e),
         )
         raise HTTPException(status_code=500, detail=f"Scan failed: {str(e)}")
 
@@ -136,7 +131,7 @@ def get_scans(
             confidence_score=scan.confidence_score,
             classification_notes=scan.classification_notes,
             body_preview=scan.body_preview,
-            created_at=scan.created_at
+            created_at=scan.created_at,
         )
         for scan in scans
     ]

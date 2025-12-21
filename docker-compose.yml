@@ -6,7 +6,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: antispam
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -18,7 +18,7 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT:-6379}:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -31,8 +31,10 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      target: development
+    user: "${UID:-1000}:${GID:-1000}"
     ports:
-      - "8000:8000"
+      - "${BACKEND_PORT:-8000}:8000"
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/antispam
       - REDIS_URL=redis://redis:6379/0
@@ -62,6 +64,8 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      target: development
+    user: "${UID:-1000}:${GID:-1000}"
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/antispam
       - REDIS_URL=redis://redis:6379/0
@@ -75,12 +79,15 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    entrypoint: ./entrypoint-worker.sh
     command: celery -A app.celery_app worker --loglevel=info
 
   celery-beat:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      target: development
+    user: "${UID:-1000}:${GID:-1000}"
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/antispam
       - REDIS_URL=redis://redis:6379/0
@@ -94,14 +101,16 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    entrypoint: ./entrypoint-worker.sh
     command: celery -A app.celery_app beat --loglevel=info
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      target: production
     ports:
-      - "3000:80"
+      - "${FRONTEND_PORT:-3000}:80"
     depends_on:
       - backend
     healthcheck:

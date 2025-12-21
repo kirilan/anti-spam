@@ -5,7 +5,7 @@ from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'
+os.environ["OAUTHLIB_RELAX_TOKEN_SCOPE"] = "1"
 
 from app.config import settings
 from app.exceptions import GmailQuotaExceededError
@@ -14,10 +14,10 @@ from app.models.user import User
 
 class GmailService:
     SCOPES = [
-        'openid',
-        'https://www.googleapis.com/auth/userinfo.email',
-        'https://www.googleapis.com/auth/gmail.readonly',
-        'https://www.googleapis.com/auth/gmail.send'
+        "openid",
+        "https://www.googleapis.com/auth/userinfo.email",
+        "https://www.googleapis.com/auth/gmail.readonly",
+        "https://www.googleapis.com/auth/gmail.send",
     ]
 
     def __init__(self):
@@ -27,22 +27,17 @@ class GmailService:
                 "client_secret": settings.google_client_secret,
                 "auth_uri": "https://accounts.google.com/o/oauth2/auth",
                 "token_uri": "https://oauth2.googleapis.com/token",
-                "redirect_uris": [settings.google_redirect_uri]
+                "redirect_uris": [settings.google_redirect_uri],
             }
         }
 
     def get_authorization_url(self) -> tuple[str, str]:
         """Generate OAuth authorization URL and state"""
         flow = Flow.from_client_config(
-            self.client_config,
-            scopes=self.SCOPES,
-            redirect_uri=settings.google_redirect_uri
+            self.client_config, scopes=self.SCOPES, redirect_uri=settings.google_redirect_uri
         )
 
-        authorization_url, state = flow.authorization_url(
-            access_type='offline',
-            prompt='consent'
-        )
+        authorization_url, state = flow.authorization_url(access_type="offline", prompt="consent")
 
         return authorization_url, state
 
@@ -52,19 +47,19 @@ class GmailService:
             self.client_config,
             scopes=self.SCOPES,
             redirect_uri=settings.google_redirect_uri,
-            state=state
+            state=state,
         )
 
         flow.fetch_token(code=code)
         credentials = flow.credentials
 
         return {
-            'access_token': credentials.token,
-            'refresh_token': credentials.refresh_token,
-            'token_uri': credentials.token_uri,
-            'client_id': credentials.client_id,
-            'client_secret': credentials.client_secret,
-            'scopes': credentials.scopes
+            "access_token": credentials.token,
+            "refresh_token": credentials.refresh_token,
+            "token_uri": credentials.token_uri,
+            "client_id": credentials.client_id,
+            "client_secret": credentials.client_secret,
+            "scopes": credentials.scopes,
         }
 
     def get_credentials(self, user: User) -> Credentials:
@@ -75,10 +70,10 @@ class GmailService:
         credentials = Credentials(
             token=access_token,
             refresh_token=refresh_token,
-            token_uri=self.client_config['web']['token_uri'],
-            client_id=self.client_config['web']['client_id'],
-            client_secret=self.client_config['web']['client_secret'],
-            scopes=self.SCOPES
+            token_uri=self.client_config["web"]["token_uri"],
+            client_id=self.client_config["web"]["client_id"],
+            client_secret=self.client_config["web"]["client_secret"],
+            scopes=self.SCOPES,
         )
 
         return credentials
@@ -86,55 +81,42 @@ class GmailService:
     def get_user_info(self, credentials: Credentials) -> dict[str, str]:
         """Get user info from Google"""
         from googleapiclient.discovery import build
-        service = build('oauth2', 'v2', credentials=credentials)
+
+        service = build("oauth2", "v2", credentials=credentials)
         user_info = service.userinfo().get().execute()
         return user_info
 
-    def list_messages(
-        self,
-        user: User,
-        query: str = '',
-        max_results: int = 100
-    ) -> list[dict]:
+    def list_messages(self, user: User, query: str = "", max_results: int = 100) -> list[dict]:
         """List Gmail messages for a user"""
         credentials = self.get_credentials(user)
-        service = build('gmail', 'v1', credentials=credentials)
+        service = build("gmail", "v1", credentials=credentials)
 
-        results = service.users().messages().list(
-            userId='me',
-            q=query,
-            maxResults=max_results
-        ).execute()
+        results = (
+            service.users().messages().list(userId="me", q=query, maxResults=max_results).execute()
+        )
 
-        return results.get('messages', [])
+        return results.get("messages", [])
 
     def get_message(self, user: User, message_id: str) -> dict:
         """Get a specific Gmail message"""
         credentials = self.get_credentials(user)
-        service = build('gmail', 'v1', credentials=credentials)
+        service = build("gmail", "v1", credentials=credentials)
 
-        message = service.users().messages().get(
-            userId='me',
-            id=message_id,
-            format='full'
-        ).execute()
+        message = (
+            service.users().messages().get(userId="me", id=message_id, format="full").execute()
+        )
 
         return message
 
     def get_message_headers(self, message: dict) -> dict[str, str]:
         """Extract headers from a Gmail message"""
         headers = {}
-        if 'payload' in message and 'headers' in message['payload']:
-            for header in message['payload']['headers']:
-                headers[header['name'].lower()] = header['value']
+        if "payload" in message and "headers" in message["payload"]:
+            for header in message["payload"]["headers"]:
+                headers[header["name"].lower()] = header["value"]
         return headers
 
-    def search_messages(
-        self,
-        user: User,
-        query: str,
-        max_results: int = 50
-    ) -> list[dict]:
+    def search_messages(self, user: User, query: str, max_results: int = 50) -> list[dict]:
         """
         Search for Gmail messages and fetch their full content
 
@@ -147,26 +129,25 @@ class GmailService:
             List of full message objects with content
         """
         credentials = self.get_credentials(user)
-        service = build('gmail', 'v1', credentials=credentials)
+        service = build("gmail", "v1", credentials=credentials)
 
         # List message IDs
-        results = service.users().messages().list(
-            userId='me',
-            q=query,
-            maxResults=max_results
-        ).execute()
+        results = (
+            service.users().messages().list(userId="me", q=query, maxResults=max_results).execute()
+        )
 
-        message_ids = results.get('messages', [])
+        message_ids = results.get("messages", [])
 
         # Fetch full message content
         messages = []
         for msg in message_ids:
             try:
-                full_message = service.users().messages().get(
-                    userId='me',
-                    id=msg['id'],
-                    format='full'
-                ).execute()
+                full_message = (
+                    service.users()
+                    .messages()
+                    .get(userId="me", id=msg["id"], format="full")
+                    .execute()
+                )
                 messages.append(full_message)
             except Exception:
                 # Skip messages that can't be fetched
@@ -191,43 +172,38 @@ class GmailService:
         def parse_parts(parts):
             nonlocal body_text
             for part in parts:
-                mime_type = part.get('mimeType', '')
+                mime_type = part.get("mimeType", "")
 
-                if mime_type == 'text/plain' and 'data' in part.get('body', {}):
-                    body_text = base64.urlsafe_b64decode(
-                        part['body']['data']
-                    ).decode('utf-8', errors='ignore')
+                if mime_type == "text/plain" and "data" in part.get("body", {}):
+                    body_text = base64.urlsafe_b64decode(part["body"]["data"]).decode(
+                        "utf-8", errors="ignore"
+                    )
                     return  # Use first text/plain part found
 
-                if 'parts' in part:
-                    parse_parts(part['parts'])
+                if "parts" in part:
+                    parse_parts(part["parts"])
 
         # Single part message
-        if 'body' in payload and 'data' in payload['body']:
-            mime_type = payload.get('mimeType', '')
-            if mime_type == 'text/plain':
-                body_text = base64.urlsafe_b64decode(
-                    payload['body']['data']
-                ).decode('utf-8', errors='ignore')
+        if "body" in payload and "data" in payload["body"]:
+            mime_type = payload.get("mimeType", "")
+            if mime_type == "text/plain":
+                body_text = base64.urlsafe_b64decode(payload["body"]["data"]).decode(
+                    "utf-8", errors="ignore"
+                )
 
         # Multi-part message
-        if 'parts' in payload:
-            parse_parts(payload['parts'])
+        if "parts" in payload:
+            parse_parts(payload["parts"])
 
         return body_text
 
     def has_send_permission(self, user: User) -> bool:
         """Check if user has granted gmail.send scope"""
         credentials = self.get_credentials(user)
-        return 'https://www.googleapis.com/auth/gmail.send' in (credentials.scopes or [])
+        return "https://www.googleapis.com/auth/gmail.send" in (credentials.scopes or [])
 
     def send_email(
-        self,
-        user: User,
-        to_email: str,
-        subject: str,
-        body: str,
-        reply_to: str | None = None
+        self, user: User, to_email: str, subject: str, body: str, reply_to: str | None = None
     ) -> dict[str, str]:
         """
         Send email via Gmail API
@@ -252,45 +228,44 @@ class GmailService:
 
         # Build credentials
         credentials = self.get_credentials(user)
-        service = build('gmail', 'v1', credentials=credentials)
+        service = build("gmail", "v1", credentials=credentials)
 
         # Create MIME message
         import base64
         from email.mime.text import MIMEText
 
-        message = MIMEText(body, 'plain')
-        message['To'] = to_email
-        message['From'] = user.email
-        message['Subject'] = subject
+        message = MIMEText(body, "plain")
+        message["To"] = to_email
+        message["From"] = user.email
+        message["Subject"] = subject
         if reply_to:
-            message['Reply-To'] = reply_to
+            message["Reply-To"] = reply_to
 
         # Encode message
         raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
 
         # Send via API
         try:
-            sent_message = service.users().messages().send(
-                userId='me',
-                body={'raw': raw_message}
-            ).execute()
+            sent_message = (
+                service.users().messages().send(userId="me", body={"raw": raw_message}).execute()
+            )
 
             return {
-                'message_id': sent_message['id'],
-                'thread_id': sent_message.get('threadId'),
-                'label_ids': sent_message.get('labelIds', [])
+                "message_id": sent_message["id"],
+                "thread_id": sent_message.get("threadId"),
+                "label_ids": sent_message.get("labelIds", []),
             }
         except HttpError as http_error:
-            status = getattr(http_error.resp, 'status', None)
+            status = getattr(http_error.resp, "status", None)
             retry_after_header = None
-            if hasattr(http_error, 'resp') and getattr(http_error.resp, 'headers', None):
-                retry_after_header = http_error.resp.headers.get('Retry-After')
+            if hasattr(http_error, "resp") and getattr(http_error.resp, "headers", None):
+                retry_after_header = http_error.resp.headers.get("Retry-After")
 
-            rate_limit_reasons = {'rateLimitExceeded', 'userRateLimitExceeded', 'quotaExceeded'}
+            rate_limit_reasons = {"rateLimitExceeded", "userRateLimitExceeded", "quotaExceeded"}
             reasons = []
-            if getattr(http_error, 'error_details', None):
+            if getattr(http_error, "error_details", None):
                 for detail in http_error.error_details:
-                    reason = detail.get('reason')
+                    reason = detail.get("reason")
                     if reason:
                         reasons.append(reason)
 
@@ -302,7 +277,9 @@ class GmailService:
 
             # Determine if the error is due to Gmail quota/rate limit
             if status in (403, 429) and any(
-                reason for reason in reasons if reason and any(r in reason for r in rate_limit_reasons)
+                reason
+                for reason in reasons
+                if reason and any(r in reason for r in rate_limit_reasons)
             ):
                 retry_after = None
                 if retry_after_header:
@@ -311,7 +288,11 @@ class GmailService:
                     except ValueError:
                         retry_after = None
 
-                message = http_error._get_reason() if hasattr(http_error, "_get_reason") else "Gmail quota exceeded"
+                message = (
+                    http_error._get_reason()
+                    if hasattr(http_error, "_get_reason")
+                    else "Gmail quota exceeded"
+                )
                 raise GmailQuotaExceededError(message=message, retry_after=retry_after)
 
             raise Exception(f"Failed to send email: {http_error}")

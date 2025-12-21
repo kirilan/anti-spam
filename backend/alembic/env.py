@@ -3,6 +3,7 @@ import sys
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config, pool
+
 from alembic import context
 
 # Add the app directory to the path
@@ -10,8 +11,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.config import settings
 from app.database import Base
-from app.models import User, DataBroker, DeletionRequest, EmailScan, ActivityLog
-from app.models.broker_response import BrokerResponse
 
 # Alembic Config object
 config = context.config

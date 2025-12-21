@@ -1,4 +1,3 @@
-
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
@@ -23,9 +22,7 @@ def list_broker_responses(
 
     Optionally filter by deletion request ID
     """
-    query = db.query(BrokerResponseModel).filter(
-        BrokerResponseModel.user_id == current_user.id
-    )
+    query = db.query(BrokerResponseModel).filter(BrokerResponseModel.user_id == current_user.id)
 
     # Filter by request_id if provided
     if request_id:
@@ -50,7 +47,7 @@ def list_broker_responses(
             matched_by=resp.matched_by,
             is_processed=resp.is_processed,
             processed_at=resp.processed_at,
-            created_at=resp.created_at
+            created_at=resp.created_at,
         )
         for resp in responses
     ]
@@ -74,7 +71,7 @@ def scan_responses(
     return {
         "task_id": task.id,
         "status": "started",
-        "message": f"Started scanning for responses from last {days_back} days"
+        "message": f"Started scanning for responses from last {days_back} days",
     }
 
 
@@ -85,9 +82,7 @@ def get_broker_response(
     current_user: User = Depends(get_current_user),
 ):
     """Get a specific broker response by ID"""
-    response = db.query(BrokerResponseModel).filter(
-        BrokerResponseModel.id == response_id
-    ).first()
+    response = db.query(BrokerResponseModel).filter(BrokerResponseModel.id == response_id).first()
 
     if not response:
         raise HTTPException(status_code=404, detail="Response not found")
@@ -98,7 +93,9 @@ def get_broker_response(
     return BrokerResponse(
         id=str(response.id),
         user_id=str(response.user_id),
-        deletion_request_id=str(response.deletion_request_id) if response.deletion_request_id else None,
+        deletion_request_id=str(response.deletion_request_id)
+        if response.deletion_request_id
+        else None,
         gmail_message_id=response.gmail_message_id,
         gmail_thread_id=response.gmail_thread_id,
         sender_email=response.sender_email,
@@ -110,5 +107,5 @@ def get_broker_response(
         matched_by=response.matched_by,
         is_processed=response.is_processed,
         processed_at=response.processed_at,
-        created_at=response.created_at
+        created_at=response.created_at,
     )

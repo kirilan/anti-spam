@@ -1,4 +1,3 @@
-
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
@@ -26,7 +25,9 @@ def get_user_stats(
 
 @router.get("/broker-ranking")
 def get_broker_ranking(
-    user_id: str | None = Query(None, description="User ID (optional, admin can query other users)"),
+    user_id: str | None = Query(
+        None, description="User ID (optional, admin can query other users)"
+    ),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> list[dict]:

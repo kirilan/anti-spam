@@ -1,9 +1,10 @@
-.PHONY: help install install-dev dev test lint format build up down logs clean migrate db-shell
+.PHONY: help setup install install-dev dev test lint format build up down logs clean migrate db-shell pre-commit
 
 help:
 	@echo "Data Deletion Assistant - Development Commands"
 	@echo ""
 	@echo "Setup:"
+	@echo "  make setup         Complete project setup (env, deps, pre-commit)"
 	@echo "  make install       Install backend dependencies (uv)"
 	@echo "  make install-dev   Install with dev dependencies"
 	@echo "  make dev           Start development environment (Docker)"
@@ -31,14 +32,33 @@ help:
 	@echo "  make lint          Run linter"
 	@echo "  make format        Format code"
 	@echo "  make check         Run all checks (lint + typecheck + test)"
+	@echo "  make pre-commit    Run pre-commit hooks on all files"
 
 # ============ Setup ============
+
+setup: .env install-dev pre-commit-install
+	@echo ""
+	@echo "Setup complete! Run 'make dev' to start the development environment."
+
+.env:
+	@if [ ! -f .env ]; then \
+		echo "Creating .env from .env.example..."; \
+		cp .env.example .env; \
+	fi
 
 install:
 	cd backend && uv sync
 
 install-dev:
 	cd backend && uv sync --all-extras
+	cd frontend && npm install
+
+pre-commit-install:
+	@if command -v pre-commit > /dev/null; then \
+		pre-commit install; \
+	else \
+		echo "pre-commit not installed. Install with: pip install pre-commit"; \
+	fi
 
 dev: up
 	@echo ""
@@ -123,6 +143,9 @@ test-cov:
 lint:
 	cd backend && uv run ruff check app tests
 
+lint-fix:
+	cd backend && uv run ruff check --fix app tests
+
 format:
 	cd backend && uv run ruff format app tests
 
@@ -130,3 +153,6 @@ typecheck:
 	cd backend && uv run mypy app
 
 check: lint typecheck test
+
+pre-commit:
+	pre-commit run --all-files

@@ -8,10 +8,21 @@ from app.models.data_broker import DataBroker
 class BrokerDetector:
     # Keywords that suggest data broker communication
     PRIVACY_KEYWORDS = [
-        'opt out', 'opt-out', 'remove your information', 'data privacy',
-        'personal information', 'public records', 'background check',
-        'people search', 'data broker', 'marketing list', 'unsubscribe',
-        'ccpa', 'gdpr', 'privacy rights', 'data deletion'
+        "opt out",
+        "opt-out",
+        "remove your information",
+        "data privacy",
+        "personal information",
+        "public records",
+        "background check",
+        "people search",
+        "data broker",
+        "marketing list",
+        "unsubscribe",
+        "ccpa",
+        "gdpr",
+        "privacy rights",
+        "data deletion",
     ]
 
     def detect_broker(
@@ -21,7 +32,7 @@ class BrokerDetector:
         subject: str,
         body_html: str,
         body_text: str,
-        all_brokers: list[DataBroker]
+        all_brokers: list[DataBroker],
     ) -> tuple[DataBroker | None, float, str]:
         """
         Detect if email is from a data broker
@@ -40,7 +51,7 @@ class BrokerDetector:
 
         # Remove HTML if present
         if body_html:
-            soup = BeautifulSoup(body_html, 'html.parser')
+            soup = BeautifulSoup(body_html, "html.parser")
             text_to_analyze += " " + soup.get_text()
 
         text_to_analyze = text_to_analyze.lower()
@@ -69,8 +80,8 @@ class BrokerDetector:
 
     def extract_domain_from_email(self, email: str) -> str:
         """Extract domain from email address"""
-        if '@' in email:
-            return email.split('@')[1].lower()
+        if "@" in email:
+            return email.split("@")[1].lower()
         return email.lower()
 
     def get_body_preview(self, body_html: str, body_text: str, max_length: int = 200) -> str:
@@ -78,13 +89,13 @@ class BrokerDetector:
         if body_text:
             preview = body_text[:max_length]
         elif body_html:
-            soup = BeautifulSoup(body_html, 'html.parser')
+            soup = BeautifulSoup(body_html, "html.parser")
             preview = soup.get_text()[:max_length]
         else:
             preview = ""
 
         # Clean up preview
-        preview = re.sub(r'\s+', ' ', preview).strip()
+        preview = re.sub(r"\s+", " ", preview).strip()
 
         if len(preview) == max_length:
             preview += "..."

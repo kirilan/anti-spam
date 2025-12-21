@@ -1,4 +1,3 @@
-
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -39,7 +38,7 @@ def serialize_request(req: DeletionRequestModel) -> DeletionRequest:
         last_send_error=req.last_send_error,
         next_retry_at=req.next_retry_at,
         created_at=req.created_at,
-        updated_at=req.updated_at
+        updated_at=req.updated_at,
     )
 
 
@@ -75,7 +74,7 @@ def create_deletion_request(
             activity_type=ActivityType.REQUEST_CREATED,
             message=f"Created deletion request for {broker.name}",
             broker_id=request.broker_id,
-            deletion_request_id=str(deletion_request.id)
+            deletion_request_id=str(deletion_request.id),
         )
 
         return serialize_request(deletion_request)
@@ -87,7 +86,7 @@ def create_deletion_request(
             activity_type=ActivityType.ERROR,
             message=f"Failed to create deletion request for {broker.name}",
             details=str(e),
-            broker_id=request.broker_id
+            broker_id=request.broker_id,
         )
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -178,7 +177,7 @@ def preview_deletion_email(
         subject=req.generated_email_subject,
         body=req.generated_email_body,
         to_email=broker.privacy_email if broker else None,
-        broker_name=broker.name if broker else "Unknown"
+        broker_name=broker.name if broker else "Unknown",
     )
 
 
@@ -215,7 +214,7 @@ def send_deletion_request(
             activity_type=ActivityType.REQUEST_SENT,
             message=f"Sent deletion request to {broker.name if broker else 'broker'}",
             broker_id=str(req.broker_id),
-            deletion_request_id=request_id
+            deletion_request_id=request_id,
         )
 
         return serialize_request(req)
@@ -235,7 +234,7 @@ def send_deletion_request(
                     message=f"Failed to send deletion request to {broker.name if broker else 'broker'}",
                     details=str(e),
                     broker_id=str(req.broker_id),
-                    deletion_request_id=request_id
+                    deletion_request_id=request_id,
                 )
         except Exception:
             pass  # Don't fail on logging errors

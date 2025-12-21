@@ -20,7 +20,7 @@ class ActivityLogService:
         broker_id: str | None = None,
         deletion_request_id: str | None = None,
         response_id: str | None = None,
-        email_scan_id: str | None = None
+        email_scan_id: str | None = None,
     ) -> ActivityLog:
         """Create an activity log entry"""
         activity = ActivityLog(
@@ -31,7 +31,7 @@ class ActivityLogService:
             broker_id=broker_id,
             deletion_request_id=deletion_request_id,
             response_id=response_id,
-            email_scan_id=email_scan_id
+            email_scan_id=email_scan_id,
         )
         self.db.add(activity)
         self.db.commit()
@@ -44,12 +44,10 @@ class ActivityLogService:
         broker_id: str | None = None,
         activity_type: ActivityType | None = None,
         days_back: int = 30,
-        limit: int = 100
+        limit: int = 100,
     ) -> list[ActivityLog]:
         """Get activity logs for a user"""
-        query = self.db.query(ActivityLog).filter(
-            ActivityLog.user_id == user_id
-        )
+        query = self.db.query(ActivityLog).filter(ActivityLog.user_id == user_id)
 
         if broker_id:
             query = query.filter(ActivityLog.broker_id == broker_id)

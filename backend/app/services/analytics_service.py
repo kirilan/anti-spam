@@ -2,6 +2,7 @@
 Analytics Service
 Provides statistical analysis and insights about deletion requests and broker responses
 """
+
 from datetime import datetime, timedelta
 
 from sqlalchemy import case, func
@@ -28,10 +29,7 @@ class AnalyticsService:
         """
         # Count requests by status
         status_counts = (
-            self.db.query(
-                DeletionRequest.status,
-                func.count(DeletionRequest.id).label('count')
-            )
+            self.db.query(DeletionRequest.status, func.count(DeletionRequest.id).label("count"))
             .filter(DeletionRequest.user_id == user_id)
             .group_by(DeletionRequest.status)
             .all()
@@ -39,30 +37,30 @@ class AnalyticsService:
 
         # Convert to dict
         stats = {
-            'total_requests': 0,
-            'confirmed_deletions': 0,
-            'sent_requests': 0,
-            'rejected': 0,
-            'pending_requests': 0
+            "total_requests": 0,
+            "confirmed_deletions": 0,
+            "sent_requests": 0,
+            "rejected": 0,
+            "pending_requests": 0,
         }
 
         for status, count in status_counts:
-            stats['total_requests'] += count
+            stats["total_requests"] += count
             if status == RequestStatus.CONFIRMED:
-                stats['confirmed_deletions'] = count
+                stats["confirmed_deletions"] = count
             elif status == RequestStatus.SENT:
-                stats['sent_requests'] = count
+                stats["sent_requests"] = count
             elif status == RequestStatus.REJECTED:
-                stats['rejected'] = count
+                stats["rejected"] = count
             elif status == RequestStatus.PENDING:
-                stats['pending_requests'] = count
+                stats["pending_requests"] = count
 
         # Calculate success rate
-        total_sent = stats['confirmed_deletions'] + stats['sent_requests'] + stats['rejected']
+        total_sent = stats["confirmed_deletions"] + stats["sent_requests"] + stats["rejected"]
         if total_sent > 0:
-            stats['success_rate'] = round((stats['confirmed_deletions'] / total_sent) * 100, 1)
+            stats["success_rate"] = round((stats["confirmed_deletions"] / total_sent) * 100, 1)
         else:
-            stats['success_rate'] = 0.0
+            stats["success_rate"] = 0.0
 
         # Calculate average response time
         confirmed_requests = (
@@ -71,19 +69,16 @@ class AnalyticsService:
                 DeletionRequest.user_id == user_id,
                 DeletionRequest.status == RequestStatus.CONFIRMED,
                 DeletionRequest.sent_at.isnot(None),
-                DeletionRequest.confirmed_at.isnot(None)
+                DeletionRequest.confirmed_at.isnot(None),
             )
             .all()
         )
 
         if confirmed_requests:
-            total_days = sum(
-                (req.confirmed_at - req.sent_at).days
-                for req in confirmed_requests
-            )
-            stats['avg_response_time_days'] = round(total_days / len(confirmed_requests), 1)
+            total_days = sum((req.confirmed_at - req.sent_at).days for req in confirmed_requests)
+            stats["avg_response_time_days"] = round(total_days / len(confirmed_requests), 1)
         else:
-            stats['avg_response_time_days'] = None
+            stats["avg_response_time_days"] = None
 
         return stats
 
@@ -100,27 +95,21 @@ class AnalyticsService:
             Sorted by success_rate descending
         """
         query = self.db.query(
-            DataBroker.id.label('broker_id'),
-            DataBroker.name.label('broker_name'),
-            func.count(DeletionRequest.id).label('total_requests'),
-            func.sum(
-                case((DeletionRequest.status == RequestStatus.CONFIRMED, 1), else_=0)
-            ).label('confirmed'),
-            func.sum(
-                case((DeletionRequest.status == RequestStatus.REJECTED, 1), else_=0)
-            ).label('rejected')
-        ).join(
-            DeletionRequest,
-            DeletionRequest.broker_id == DataBroker.id
-        )
+            DataBroker.id.label("broker_id"),
+            DataBroker.name.label("broker_name"),
+            func.count(DeletionRequest.id).label("total_requests"),
+            func.sum(case((DeletionRequest.status == RequestStatus.CONFIRMED, 1), else_=0)).label(
+                "confirmed"
+            ),
+            func.sum(case((DeletionRequest.status == RequestStatus.REJECTED, 1), else_=0)).label(
+                "rejected"
+            ),
+        ).join(DeletionRequest, DeletionRequest.broker_id == DataBroker.id)
 
         if user_id:
             query = query.filter(DeletionRequest.user_id == user_id)
 
-        results = query.group_by(
-            DataBroker.id,
-            DataBroker.name
-        ).all()
+        results = query.group_by(DataBroker.id, DataBroker.name).all()
 
         # Calculate success rates and average response times
         rankings = []
@@ -129,44 +118,40 @@ class AnalyticsService:
             success_rate = (row.confirmed / total_completed * 100) if total_completed > 0 else 0
 
             # Get average response time for this broker
-            confirmed_requests = (
-                self.db.query(DeletionRequest)
-                .filter(
-                    DeletionRequest.broker_id == row.broker_id,
-                    DeletionRequest.status == RequestStatus.CONFIRMED,
-                    DeletionRequest.sent_at.isnot(None),
-                    DeletionRequest.confirmed_at.isnot(None)
-                )
+            confirmed_requests = self.db.query(DeletionRequest).filter(
+                DeletionRequest.broker_id == row.broker_id,
+                DeletionRequest.status == RequestStatus.CONFIRMED,
+                DeletionRequest.sent_at.isnot(None),
+                DeletionRequest.confirmed_at.isnot(None),
             )
 
             if user_id:
-                confirmed_requests = confirmed_requests.filter(
-                    DeletionRequest.user_id == user_id
-                )
+                confirmed_requests = confirmed_requests.filter(DeletionRequest.user_id == user_id)
 
             confirmed_requests = confirmed_requests.all()
 
             if confirmed_requests:
                 total_days = sum(
-                    (req.confirmed_at - req.sent_at).days
-                    for req in confirmed_requests
+                    (req.confirmed_at - req.sent_at).days for req in confirmed_requests
                 )
                 avg_response_days = round(total_days / len(confirmed_requests), 1)
             else:
                 avg_response_days = 0.0
 
-            rankings.append({
-                'broker_id': str(row.broker_id),
-                'broker_name': row.broker_name,
-                'total_requests': row.total_requests,
-                'confirmations': row.confirmed,
-                'rejected': row.rejected,
-                'success_rate': round(success_rate, 1),
-                'avg_response_time_days': avg_response_days if avg_response_days > 0 else None
-            })
+            rankings.append(
+                {
+                    "broker_id": str(row.broker_id),
+                    "broker_name": row.broker_name,
+                    "total_requests": row.total_requests,
+                    "confirmations": row.confirmed,
+                    "rejected": row.rejected,
+                    "success_rate": round(success_rate, 1),
+                    "avg_response_time_days": avg_response_days if avg_response_days > 0 else None,
+                }
+            )
 
         # Sort by success rate descending, then by total requests
-        rankings.sort(key=lambda x: (-x['success_rate'], -x['total_requests']))
+        rankings.sort(key=lambda x: (-x["success_rate"], -x["total_requests"]))
 
         return rankings
 
@@ -186,13 +171,13 @@ class AnalyticsService:
         # Get requests sent per day
         sent_by_day = (
             self.db.query(
-                func.date(DeletionRequest.sent_at).label('date'),
-                func.count(DeletionRequest.id).label('count')
+                func.date(DeletionRequest.sent_at).label("date"),
+                func.count(DeletionRequest.id).label("count"),
             )
             .filter(
                 DeletionRequest.user_id == user_id,
                 DeletionRequest.sent_at >= cutoff_date,
-                DeletionRequest.sent_at.isnot(None)
+                DeletionRequest.sent_at.isnot(None),
             )
             .group_by(func.date(DeletionRequest.sent_at))
             .all()
@@ -201,13 +186,13 @@ class AnalyticsService:
         # Get confirmations received per day
         confirmed_by_day = (
             self.db.query(
-                func.date(DeletionRequest.confirmed_at).label('date'),
-                func.count(DeletionRequest.id).label('count')
+                func.date(DeletionRequest.confirmed_at).label("date"),
+                func.count(DeletionRequest.id).label("count"),
             )
             .filter(
                 DeletionRequest.user_id == user_id,
                 DeletionRequest.confirmed_at >= cutoff_date,
-                DeletionRequest.confirmed_at.isnot(None)
+                DeletionRequest.confirmed_at.isnot(None),
             )
             .group_by(func.date(DeletionRequest.confirmed_at))
             .all()
@@ -219,24 +204,24 @@ class AnalyticsService:
         for row in sent_by_day:
             date_str = row.date.isoformat()
             timeline[date_str] = {
-                'date': date_str,
-                'requests_sent': row.count,
-                'confirmations_received': 0
+                "date": date_str,
+                "requests_sent": row.count,
+                "confirmations_received": 0,
             }
 
         for row in confirmed_by_day:
             date_str = row.date.isoformat()
             if date_str in timeline:
-                timeline[date_str]['confirmations_received'] = row.count
+                timeline[date_str]["confirmations_received"] = row.count
             else:
                 timeline[date_str] = {
-                    'date': date_str,
-                    'requests_sent': 0,
-                    'confirmations_received': row.count
+                    "date": date_str,
+                    "requests_sent": 0,
+                    "confirmations_received": row.count,
                 }
 
         # Convert to sorted list
-        result = sorted(timeline.values(), key=lambda x: x['date'])
+        result = sorted(timeline.values(), key=lambda x: x["date"])
 
         return result
 
@@ -252,8 +237,7 @@ class AnalyticsService:
         """
         results = (
             self.db.query(
-                BrokerResponse.response_type,
-                func.count(BrokerResponse.id).label('count')
+                BrokerResponse.response_type, func.count(BrokerResponse.id).label("count")
             )
             .filter(BrokerResponse.user_id == user_id)
             .group_by(BrokerResponse.response_type)
@@ -269,9 +253,9 @@ class AnalyticsService:
 
         return [
             {
-                'response_type': row.response_type.value,
-                'count': row.count,
-                'percentage': round((row.count / total) * 100, 1)
+                "response_type": row.response_type.value,
+                "count": row.count,
+                "percentage": round((row.count / total) * 100, 1),
             }
             for row in results
         ]

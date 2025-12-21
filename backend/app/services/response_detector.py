@@ -2,6 +2,7 @@
 Response Detector Service
 Classifies broker email responses based on keyword matching
 """
+
 import re
 
 from app.models.broker_response import ResponseType
@@ -13,53 +14,101 @@ class ResponseDetector:
     # Keyword patterns for each response type
     CONFIRMATION_KEYWORDS = [
         # Direct deletion statements
-        'deleted', 'removed', 'erasure complete', 'data erased',
-        'successfully deleted', 'removed from our database',
-        'removed from our system', 'no longer in our records',
-        'deletion complete', 'account closed', 'account deleted',
-        'unsubscribed', 'removed from our list', 'opt-out confirmed',
-
+        "deleted",
+        "removed",
+        "erasure complete",
+        "data erased",
+        "successfully deleted",
+        "removed from our database",
+        "removed from our system",
+        "no longer in our records",
+        "deletion complete",
+        "account closed",
+        "account deleted",
+        "unsubscribed",
+        "removed from our list",
+        "opt-out confirmed",
         # Request completion
-        'request completed', 'request has been completed',
-        'successfully processed your request to delete',
-        'processed your deletion request', 'deletion request has been processed',
-        'request has been processed', 'your request has been fulfilled',
-
+        "request completed",
+        "request has been completed",
+        "successfully processed your request to delete",
+        "processed your deletion request",
+        "deletion request has been processed",
+        "request has been processed",
+        "your request has been fulfilled",
         # Confirmation statements
-        'confirm the deletion', 'confirm deletion', 'we confirm',
-        'deletion of your personal data', 'deletion of your data',
-        'your data has been deleted', 'your data has been removed',
-        'your information has been deleted', 'your information has been removed',
-
+        "confirm the deletion",
+        "confirm deletion",
+        "we confirm",
+        "deletion of your personal data",
+        "deletion of your data",
+        "your data has been deleted",
+        "your data has been removed",
+        "your information has been deleted",
+        "your information has been removed",
         # Completed actions
-        'has been deleted', 'has been removed', 'have been deleted',
-        'have been removed', 'been successfully removed', 'been successfully deleted'
+        "has been deleted",
+        "has been removed",
+        "have been deleted",
+        "have been removed",
+        "been successfully removed",
+        "been successfully deleted",
     ]
 
     REJECTION_KEYWORDS = [
-        'unable to delete', 'cannot delete', 'denied', 'rejected',
-        'no record found', 'no records found', 'could not find',
-        'we do not have', 'not in our system', 'not in our database',
-        'unable to locate', 'cannot verify', 'insufficient information',
-        'cannot process', 'unable to fulfill', 'request denied'
+        "unable to delete",
+        "cannot delete",
+        "denied",
+        "rejected",
+        "no record found",
+        "no records found",
+        "could not find",
+        "we do not have",
+        "not in our system",
+        "not in our database",
+        "unable to locate",
+        "cannot verify",
+        "insufficient information",
+        "cannot process",
+        "unable to fulfill",
+        "request denied",
     ]
 
     ACKNOWLEDGMENT_KEYWORDS = [
-        'acknowledged', 'acknowledge', 'received your request', 'processing your request',
-        'reviewing your request', 'working on your request',
-        'will process', 'will review', 'in progress',
-        'under review', 'being processed', 'ticket created',
-        'case number', 'reference number', 'request number',
-        'acknowledge receipt', 'received and will', 'thank you for contacting'
+        "acknowledged",
+        "acknowledge",
+        "received your request",
+        "processing your request",
+        "reviewing your request",
+        "working on your request",
+        "will process",
+        "will review",
+        "in progress",
+        "under review",
+        "being processed",
+        "ticket created",
+        "case number",
+        "reference number",
+        "request number",
+        "acknowledge receipt",
+        "received and will",
+        "thank you for contacting",
     ]
 
     REQUEST_INFO_KEYWORDS = [
-        'need more information', 'need additional information',
-        'verify your identity', 'confirm your identity',
-        'additional details', 'provide more details',
-        'please provide', 'require verification',
-        'identity verification', 'verify that you are',
-        'confirm that you', 'need to verify', 'unable to verify'
+        "need more information",
+        "need additional information",
+        "verify your identity",
+        "confirm your identity",
+        "additional details",
+        "provide more details",
+        "please provide",
+        "require verification",
+        "identity verification",
+        "verify that you are",
+        "confirm that you",
+        "need to verify",
+        "unable to verify",
     ]
 
     def __init__(self):
@@ -72,13 +121,11 @@ class ResponseDetector:
     def _compile_pattern(self, keywords: list) -> re.Pattern:
         """Compile a list of keywords into a single regex pattern"""
         # Escape special regex characters and join with OR
-        pattern = '|'.join(re.escape(kw) for kw in keywords)
+        pattern = "|".join(re.escape(kw) for kw in keywords)
         return re.compile(pattern, re.IGNORECASE)
 
     def detect_response_type(
-        self,
-        subject: str | None,
-        body: str | None
+        self, subject: str | None, body: str | None
     ) -> tuple[ResponseType, float]:
         """
         Detect the type of response based on subject and body content
@@ -92,7 +139,7 @@ class ResponseDetector:
             confidence_score ranges from 0.0 to 1.0
         """
         # Combine subject and body for analysis
-        text = ' '.join(filter(None, [subject or '', body or ''])).lower()
+        text = " ".join(filter(None, [subject or "", body or ""])).lower()
 
         if not text:
             return (ResponseType.UNKNOWN, 0.0)
@@ -102,7 +149,7 @@ class ResponseDetector:
             ResponseType.CONFIRMATION: len(self.confirmation_pattern.findall(text)),
             ResponseType.REJECTION: len(self.rejection_pattern.findall(text)),
             ResponseType.ACKNOWLEDGMENT: len(self.acknowledgment_pattern.findall(text)),
-            ResponseType.REQUEST_INFO: len(self.request_info_pattern.findall(text))
+            ResponseType.REQUEST_INFO: len(self.request_info_pattern.findall(text)),
         }
 
         # Find the type with the most matches
@@ -136,7 +183,7 @@ class ResponseDetector:
             ResponseType.CONFIRMATION: self.confirmation_pattern,
             ResponseType.REJECTION: self.rejection_pattern,
             ResponseType.ACKNOWLEDGMENT: self.acknowledgment_pattern,
-            ResponseType.REQUEST_INFO: self.request_info_pattern
+            ResponseType.REQUEST_INFO: self.request_info_pattern,
         }
 
         pattern = pattern_map.get(response_type)
@@ -160,11 +207,11 @@ class ResponseDetector:
 
         # Common patterns for case numbers
         patterns = [
-            r'case\s*#?\s*([A-Z0-9-]+)',
-            r'ticket\s*#?\s*([A-Z0-9-]+)',
-            r'reference\s*#?\s*([A-Z0-9-]+)',
-            r'request\s*#?\s*([A-Z0-9-]+)',
-            r'#\s*([A-Z0-9-]{6,})'  # Generic #XXXXX format
+            r"case\s*#?\s*([A-Z0-9-]+)",
+            r"ticket\s*#?\s*([A-Z0-9-]+)",
+            r"reference\s*#?\s*([A-Z0-9-]+)",
+            r"request\s*#?\s*([A-Z0-9-]+)",
+            r"#\s*([A-Z0-9-]{6,})",  # Generic #XXXXX format
         ]
 
         for pattern in patterns:

@@ -18,9 +18,7 @@ def test_list_brokers_empty(client: TestClient, auth_headers: dict):
     assert response.json() == []
 
 
-def test_list_brokers_with_data(
-    client: TestClient, auth_headers: dict, test_broker: DataBroker
-):
+def test_list_brokers_with_data(client: TestClient, auth_headers: dict, test_broker: DataBroker):
     """Test listing brokers returns existing brokers"""
     response = client.get("/brokers/", headers=auth_headers)
     assert response.status_code == 200
@@ -30,9 +28,7 @@ def test_list_brokers_with_data(
     assert "testbroker.com" in data[0]["domains"]
 
 
-def test_get_broker_by_id(
-    client: TestClient, auth_headers: dict, test_broker: DataBroker
-):
+def test_get_broker_by_id(client: TestClient, auth_headers: dict, test_broker: DataBroker):
     """Test getting a specific broker by ID"""
     response = client.get(f"/brokers/{test_broker.id}", headers=auth_headers)
     assert response.status_code == 200
@@ -43,9 +39,7 @@ def test_get_broker_by_id(
 
 def test_get_broker_not_found(client: TestClient, auth_headers: dict):
     """Test getting a non-existent broker returns 404"""
-    response = client.get(
-        "/brokers/00000000-0000-0000-0000-000000000000", headers=auth_headers
-    )
+    response = client.get("/brokers/00000000-0000-0000-0000-000000000000", headers=auth_headers)
     assert response.status_code == 404
 
 

@@ -1,4 +1,3 @@
-
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
@@ -28,7 +27,7 @@ def get_activities(
         broker_id=broker_id,
         activity_type=activity_type,
         days_back=days_back,
-        limit=limit
+        limit=limit,
     )
     return [
         ActivityLogResponse(
@@ -38,7 +37,9 @@ def get_activities(
             message=activity.message,
             details=activity.details,
             broker_id=str(activity.broker_id) if activity.broker_id else None,
-            deletion_request_id=str(activity.deletion_request_id) if activity.deletion_request_id else None,
+            deletion_request_id=str(activity.deletion_request_id)
+            if activity.deletion_request_id
+            else None,
             response_id=str(activity.response_id) if activity.response_id else None,
             email_scan_id=str(activity.email_scan_id) if activity.email_scan_id else None,
             created_at=activity.created_at,

@@ -1,20 +1,27 @@
-# Git & editor metadata
-.git
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Git
+.git/
 .gitignore
-.idea
-.vscode
 
-# Node modules & lockfiles copied separately
-node_modules
-npm-debug.log*
-pnpm-lock.yaml
-yarn.lock
+# Docker
+Dockerfile
+.dockerignore
 
-# Build outputs
-dist
-coverage
-.nyc_output
+# Documentation
+*.md
 
-# Env files
-.env
-.env.*
+# Misc
+*.log
+.DS_Store
+.env*

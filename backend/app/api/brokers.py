@@ -1,4 +1,3 @@
-
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -29,7 +28,7 @@ def list_brokers(
             opt_out_url=broker.opt_out_url,
             category=broker.category,
             created_at=broker.created_at,
-            updated_at=broker.updated_at
+            updated_at=broker.updated_at,
         )
         for broker in brokers
     ]
@@ -56,7 +55,7 @@ def get_broker(
         opt_out_url=broker.opt_out_url,
         category=broker.category,
         created_at=broker.created_at,
-        updated_at=broker.updated_at
+        updated_at=broker.updated_at,
     )
 
 
@@ -81,7 +80,7 @@ def create_broker(
         opt_out_url=broker.opt_out_url,
         category=broker.category,
         created_at=broker.created_at,
-        updated_at=broker.updated_at
+        updated_at=broker.updated_at,
     )
 
 
@@ -98,9 +97,7 @@ def sync_brokers(
         total = len(service.get_all_brokers())
 
         return BrokerSyncResult(
-            message="Successfully synced brokers",
-            brokers_added=count,
-            total_brokers=total
+            message="Successfully synced brokers", brokers_added=count, total_brokers=total
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to sync brokers: {str(e)}")

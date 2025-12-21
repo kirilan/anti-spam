@@ -59,10 +59,7 @@ class EmailTemplates:
 
     @classmethod
     def generate_deletion_request_email(
-        cls,
-        user_email: str,
-        broker_name: str,
-        framework: str = "GDPR/CCPA"
+        cls, user_email: str, broker_name: str, framework: str = "GDPR/CCPA"
     ) -> tuple[str, str]:
         """
         Generate deletion request email from template
@@ -107,16 +104,15 @@ class EmailTemplates:
 
     @staticmethod
     def _generate_fallback_body(
-        user_email: str,
-        broker_name: str,
-        framework: str,
-        deadline: str
+        user_email: str, broker_name: str, framework: str, deadline: str
     ) -> str:
         """Generate fallback email body if template file is unavailable"""
         if "GDPR" in framework:
             legal_ref = "Under Article 17 of the GDPR, I have the right to request erasure of my personal data."
         else:
-            legal_ref = "Under the CCPA, I have the right to request deletion of my personal information."
+            legal_ref = (
+                "Under the CCPA, I have the right to request deletion of my personal information."
+            )
 
         return f"""Dear {broker_name} Privacy Team,
 

@@ -85,9 +85,7 @@ class BrokerBase(BaseModel):
         if not v:
             return None
         if v not in VALID_CATEGORIES:
-            raise ValueError(
-                f"Invalid category. Must be one of: {', '.join(VALID_CATEGORIES)}"
-            )
+            raise ValueError(f"Invalid category. Must be one of: {', '.join(VALID_CATEGORIES)}")
         return v
 
 

@@ -10,6 +10,7 @@ from app.database import Base
 
 class ActivityType(str, enum.Enum):
     """Types of activities to log"""
+
     REQUEST_CREATED = "request_created"
     REQUEST_SENT = "request_sent"
     RESPONSE_RECEIVED = "response_received"
@@ -31,7 +32,7 @@ class ActivityLog(Base):
     activity_type = Column(
         SQLEnum(ActivityType, values_callable=lambda x: [e.value for e in x]),
         nullable=False,
-        index=True
+        index=True,
     )
     message = Column(String, nullable=False)  # User-friendly message
     details = Column(Text, nullable=True)  # Additional context (JSON string)

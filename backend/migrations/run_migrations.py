@@ -2,48 +2,45 @@
 """
 Database migration runner - automatically applies pending migrations
 """
+
 import os
 import sys
 from pathlib import Path
+
 import psycopg2
-from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
 # Get database URL from environment
-DATABASE_URL = os.getenv('DATABASE_URL', 'postgresql://postgres:postgres@db:5432/antispam')
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@db:5432/antispam")
+
 
 def get_db_connection():
     """Create database connection from DATABASE_URL"""
     # Parse postgres://user:pass@host:port/dbname
-    url = DATABASE_URL.replace('postgresql://', '').replace('postgres://', '')
+    url = DATABASE_URL.replace("postgresql://", "").replace("postgres://", "")
 
-    if '@' in url:
-        auth, rest = url.split('@')
-        user, password = auth.split(':')
+    if "@" in url:
+        auth, rest = url.split("@")
+        user, password = auth.split(":")
         host_port_db = rest
     else:
-        user = 'postgres'
-        password = 'postgres'
+        user = "postgres"
+        password = "postgres"
         host_port_db = url
 
-    if '/' in host_port_db:
-        host_port, dbname = host_port_db.split('/')
+    if "/" in host_port_db:
+        host_port, dbname = host_port_db.split("/")
     else:
         host_port = host_port_db
-        dbname = 'antispam'
+        dbname = "antispam"
 
-    if ':' in host_port:
-        host, port = host_port.split(':')
+    if ":" in host_port:
+        host, port = host_port.split(":")
     else:
         host = host_port
-        port = '5432'
+        port = "5432"
 
-    return psycopg2.connect(
-        host=host,
-        port=port,
-        database=dbname,
-        user=user,
-        password=password
-    )
+    return psycopg2.connect(host=host, port=port, database=dbname, user=user, password=password)
+
 
 def create_migrations_table(conn):
     """Create migrations tracking table if it doesn't exist"""
@@ -58,27 +55,30 @@ def create_migrations_table(conn):
     conn.commit()
     print("✓ Migrations tracking table ready")
 
+
 def get_applied_migrations(conn):
     """Get list of already applied migrations"""
     with conn.cursor() as cur:
         cur.execute("SELECT migration_file FROM schema_migrations ORDER BY migration_file")
         return {row[0] for row in cur.fetchall()}
 
+
 def get_pending_migrations(migrations_dir):
     """Get list of all .sql migration files"""
     migrations = []
-    for file in sorted(Path(migrations_dir).glob('*.sql')):
+    for file in sorted(Path(migrations_dir).glob("*.sql")):
         migrations.append(file.name)
     return migrations
+
 
 def apply_migration(conn, migration_file, migrations_dir):
     """Apply a single migration file"""
     filepath = Path(migrations_dir) / migration_file
 
-    print(f"  Applying {migration_file}...", end=' ')
+    print(f"  Applying {migration_file}...", end=" ")
 
     try:
-        with open(filepath, 'r') as f:
+        with open(filepath) as f:
             sql = f.read()
 
         with conn.cursor() as cur:
@@ -87,8 +87,7 @@ def apply_migration(conn, migration_file, migrations_dir):
 
             # Record that this migration was applied
             cur.execute(
-                "INSERT INTO schema_migrations (migration_file) VALUES (%s)",
-                (migration_file,)
+                "INSERT INTO schema_migrations (migration_file) VALUES (%s)", (migration_file,)
             )
 
         conn.commit()
@@ -100,6 +99,7 @@ def apply_migration(conn, migration_file, migrations_dir):
         print(f"✗ Failed: {e}")
         return False
 
+
 def run_migrations():
     """Main migration runner"""
     migrations_dir = Path(__file__).parent
@@ -110,7 +110,7 @@ def run_migrations():
 
     try:
         # Connect to database
-        print(f"\nConnecting to database...")
+        print("\nConnecting to database...")
         conn = get_db_connection()
         print("✓ Connected")
 
@@ -122,7 +122,7 @@ def run_migrations():
         all_migrations = get_pending_migrations(migrations_dir)
         pending = [m for m in all_migrations if m not in applied]
 
-        print(f"\nMigrations status:")
+        print("\nMigrations status:")
         print(f"  Already applied: {len(applied)}")
         print(f"  Pending: {len(pending)}")
 
@@ -138,7 +138,7 @@ def run_migrations():
             if apply_migration(conn, migration, migrations_dir):
                 success_count += 1
             else:
-                print(f"\n✗ Migration failed. Stopping.")
+                print("\n✗ Migration failed. Stopping.")
                 return False
 
         print(f"\n✓ Successfully applied {success_count} migration(s)")
@@ -150,9 +150,10 @@ def run_migrations():
         return False
 
     finally:
-        if 'conn' in locals():
+        if "conn" in locals():
             conn.close()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     success = run_migrations()
     sys.exit(0 if success else 1)

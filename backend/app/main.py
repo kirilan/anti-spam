@@ -54,11 +54,7 @@ app.add_middleware(
 @app.get("/")
 def read_root():
     """Root endpoint"""
-    return {
-        "message": "Data Deletion Assistant API",
-        "docs": "/docs",
-        "version": "1.0.0"
-    }
+    return {"message": "Data Deletion Assistant API", "docs": "/docs", "version": "1.0.0"}
 
 
 @app.get("/health")

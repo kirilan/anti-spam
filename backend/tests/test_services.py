@@ -57,8 +57,7 @@ class TestResponseDetector:
         """Test detecting a confirmation response"""
         detector = ResponseDetector()
         response_type, confidence = detector.detect_response_type(
-            subject=None,
-            body="Your data has been successfully deleted from our systems."
+            subject=None, body="Your data has been successfully deleted from our systems."
         )
         assert response_type.value == "confirmation"
         assert confidence > 0.3
@@ -67,8 +66,7 @@ class TestResponseDetector:
         """Test detecting a rejection response"""
         detector = ResponseDetector()
         response_type, confidence = detector.detect_response_type(
-            subject=None,
-            body="We were unable to locate any records matching your request."
+            subject=None, body="We were unable to locate any records matching your request."
         )
         assert response_type.value == "rejection"
         assert confidence > 0.3
@@ -77,8 +75,7 @@ class TestResponseDetector:
         """Test detecting an acknowledgment response"""
         detector = ResponseDetector()
         response_type, confidence = detector.detect_response_type(
-            subject=None,
-            body="We have received your request and it is currently under review."
+            subject=None, body="We have received your request and it is currently under review."
         )
         assert response_type.value == "acknowledgment"
         assert confidence > 0.3
@@ -87,8 +84,7 @@ class TestResponseDetector:
         """Test detecting a request for more information"""
         detector = ResponseDetector()
         response_type, confidence = detector.detect_response_type(
-            subject=None,
-            body="Please verify your identity by providing additional documentation."
+            subject=None, body="Please verify your identity by providing additional documentation."
         )
         assert response_type.value == "request_info"
         assert confidence > 0.3
@@ -97,7 +93,6 @@ class TestResponseDetector:
         """Test detecting an unknown response type"""
         detector = ResponseDetector()
         response_type, confidence = detector.detect_response_type(
-            subject=None,
-            body="The weather is nice today."
+            subject=None, body="The weather is nice today."
         )
         assert response_type.value == "unknown"

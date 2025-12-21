@@ -60,9 +60,7 @@ def start_scan_task(
 ):
     """Start an async email scan task"""
     task = scan_inbox_task.delay(
-        str(current_user.id),
-        days_back=request.days_back,
-        max_emails=request.max_emails
+        str(current_user.id), days_back=request.days_back, max_emails=request.max_emails
     )
     return TaskResponse(task_id=task.id, status="started")
 
@@ -85,19 +83,31 @@ def get_task_queue_health(current_user: User = Depends(require_admin)):
     workers: list[WorkerStatus] = []
     for name in sorted(worker_names):
         worker_stats = stats.get(name, {}) if isinstance(stats, dict) else {}
-        pool_info = worker_stats.get('pool', {}) if isinstance(worker_stats.get('pool'), dict) else {}
-        total_info = worker_stats.get('total', {}) if isinstance(worker_stats.get('total'), dict) else {}
+        pool_info = (
+            worker_stats.get("pool", {}) if isinstance(worker_stats.get("pool"), dict) else {}
+        )
+        total_info = (
+            worker_stats.get("total", {}) if isinstance(worker_stats.get("total"), dict) else {}
+        )
 
         workers.append(
             WorkerStatus(
                 name=name,
                 status="online" if heartbeat and name in heartbeat else "offline",
-                active_tasks=len(active.get(name, [])) if isinstance(active, dict) and active.get(name) else 0,
-                queued_tasks=len(reserved.get(name, [])) if isinstance(reserved, dict) and reserved.get(name) else 0,
-                scheduled_tasks=len(scheduled.get(name, [])) if isinstance(scheduled, dict) and scheduled.get(name) else 0,
-                total_tasks=total_info.get('tasks', 0) if isinstance(total_info, dict) else 0,
-                concurrency=pool_info.get('max-concurrency') if isinstance(pool_info, dict) else None,
-                uptime=worker_stats.get('uptime') if worker_stats else None
+                active_tasks=len(active.get(name, []))
+                if isinstance(active, dict) and active.get(name)
+                else 0,
+                queued_tasks=len(reserved.get(name, []))
+                if isinstance(reserved, dict) and reserved.get(name)
+                else 0,
+                scheduled_tasks=len(scheduled.get(name, []))
+                if isinstance(scheduled, dict) and scheduled.get(name)
+                else 0,
+                total_tasks=total_info.get("tasks", 0) if isinstance(total_info, dict) else 0,
+                concurrency=pool_info.get("max-concurrency")
+                if isinstance(pool_info, dict)
+                else None,
+                uptime=worker_stats.get("uptime") if worker_stats else None,
             )
         )
 
@@ -110,7 +120,7 @@ def get_task_queue_health(current_user: User = Depends(require_admin)):
         total_active_tasks=total_active,
         total_queued_tasks=total_queued,
         workers=workers,
-        last_updated=datetime.utcnow()
+        last_updated=datetime.utcnow(),
     )
 
 
@@ -119,10 +129,7 @@ def get_task_status(task_id: str, current_user: User = Depends(get_current_user)
     """Get the status of a Celery task"""
     result = AsyncResult(task_id, app=celery_app)
 
-    response = TaskStatusResponse(
-        task_id=task_id,
-        state=result.status
-    )
+    response = TaskStatusResponse(task_id=task_id, state=result.status)
 
     if result.status == "PROGRESS":
         response.info = result.info
