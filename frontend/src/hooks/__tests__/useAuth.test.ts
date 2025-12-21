@@ -36,7 +36,7 @@ describe('useAuth hooks', () => {
 
   describe('useAuthStatus', () => {
     it('should not fetch when no token is present', async () => {
-      ;(useAuthStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      (useAuthStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
         token: null,
         setUser: mockSetUser,
         clearAuth: mockClearAuth,

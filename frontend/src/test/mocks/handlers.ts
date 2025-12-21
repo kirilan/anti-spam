@@ -113,7 +113,7 @@ export const handlers = [
   }),
 
   http.post('/brokers/', async ({ request }) => {
-    const body = await request.json()
+    const body = (await request.json()) as Record<string, unknown>
     return HttpResponse.json({ ...mockBroker, ...body, id: 'new-broker-123' })
   }),
 
@@ -169,7 +169,7 @@ export const handlers = [
   }),
 
   http.post('/requests/', async ({ request }) => {
-    const body = await request.json()
+    const body = (await request.json()) as Record<string, unknown>
     return HttpResponse.json({ ...mockDeletionRequest, ...body, id: 'new-request-123' })
   }),
 
@@ -224,7 +224,7 @@ export const handlers = [
   }),
 
   http.patch('/responses/:id', async ({ params, request }) => {
-    const body = await request.json()
+    const body = (await request.json()) as Record<string, unknown>
     return HttpResponse.json({ ...mockBrokerResponse, id: params.id, ...body })
   }),
 
@@ -305,7 +305,7 @@ export const handlers = [
   }),
 
   http.patch('/admin/users/:id/role', async ({ params, request }) => {
-    const body = await request.json()
+    const body = (await request.json()) as Record<string, unknown>
     return HttpResponse.json({ ...mockUser, id: params.id, ...body })
   }),
 
