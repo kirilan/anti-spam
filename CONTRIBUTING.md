@@ -290,6 +290,90 @@ anti-spam/
 └── docker-compose.yml
 ```
 
+## Docker Configuration
+
+### Development vs Production
+
+The project uses multi-stage Docker builds with separate configurations:
+
+| File | Purpose | Target |
+|------|---------|--------|
+| `docker-compose.yml` | Local development | `development` stage |
+| `docker-compose.prod.yml` | Production deployment | `production` stage |
+
+### Security: Non-Root Containers
+
+All containers run as non-root users for security:
+
+- **Backend/Workers**: Run as `appuser` (UID 1000)
+- **Frontend (nginx)**: Run as `appuser` (UID 1000)
+- **Development**: Uses host UID/GID for volume mount compatibility
+
+### Port Configuration
+
+Default ports can conflict with other services. Configure via `.env`:
+
+```env
+POSTGRES_PORT=5432    # PostgreSQL
+REDIS_PORT=6379       # Redis
+BACKEND_PORT=8000     # FastAPI backend
+FRONTEND_PORT=3000    # Frontend (nginx)
+```
+
+### Useful Docker Commands
+
+```bash
+# View running containers
+docker compose ps
+
+# View logs (all services)
+docker compose logs -f
+
+# View logs (specific service)
+docker compose logs -f backend
+
+# Rebuild images after Dockerfile changes
+docker compose build
+
+# Full reset (removes data volumes)
+docker compose down -v && docker compose up -d
+
+# Run command in container
+docker compose exec backend alembic upgrade head
+
+# Run one-off container (for migrations)
+docker compose run --rm --no-deps --entrypoint "" backend alembic revision --autogenerate -m "description"
+```
+
+---
+
+## CI/CD Pipeline
+
+GitHub Actions runs on every push and pull request:
+
+| Job | Description |
+|-----|-------------|
+| `backend-lint` | Ruff linting + formatting check |
+| `backend-test` | pytest with coverage |
+| `frontend-lint` | ESLint + TypeScript check |
+| `frontend-build` | Production build test |
+| `docker-build` | Docker image build test |
+
+### Running CI Checks Locally
+
+```bash
+# Run all pre-commit hooks (same as CI lint)
+make lint
+
+# Run backend tests
+make test
+
+# Run frontend checks
+cd frontend && npm run lint && npm run typecheck && npm run build
+```
+
+---
+
 ## Troubleshooting
 
 ### Windows: Docker not starting
@@ -312,3 +396,11 @@ anti-spam/
 - Ensure Docker containers are running: `docker compose ps`
 - Check logs: `docker compose logs db`
 - Reset database: `docker compose down -v && docker compose up -d`
+
+### Port conflicts
+- Check which ports are in use: `ss -tuln | grep -E ':(5432|6379|8000|3000)'`
+- Configure alternative ports in `.env` file
+
+### File permission issues with Docker volumes
+- Development containers use `user: "${UID:-1000}:${GID:-1000}"` to match host user
+- If files are owned by root, you may need to fix ownership manually

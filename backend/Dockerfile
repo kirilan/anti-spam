@@ -26,6 +26,10 @@ FROM python:3.11-slim AS development
 
 WORKDIR /app
 
+# Create non-root user for security
+RUN groupadd --gid 1000 appgroup \
+    && useradd --uid 1000 --gid appgroup --shell /bin/bash --create-home appuser
+
 # Install runtime dependencies only
 RUN apt-get update && apt-get install -y --no-install-recommends \
     postgresql-client \
@@ -38,11 +42,14 @@ ENV PYTHONPATH="/app"
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Copy application code
-COPY . .
+# Copy application code (will be overridden by volume mount in docker-compose)
+COPY --chown=appuser:appgroup . .
 
-# Make entrypoint script executable
-RUN chmod +x entrypoint.sh
+# Make entrypoint scripts executable
+RUN chmod +x entrypoint.sh entrypoint-worker.sh
+
+# Switch to non-root user
+USER appuser
 
 EXPOSE 8000
 
@@ -76,8 +83,8 @@ ENV PYTHONUNBUFFERED=1
 # Copy application code
 COPY --chown=appuser:appgroup . .
 
-# Make entrypoint script executable
-RUN chmod +x entrypoint.sh
+# Make entrypoint scripts executable
+RUN chmod +x entrypoint.sh entrypoint-worker.sh
 
 # Switch to non-root user
 USER appuser

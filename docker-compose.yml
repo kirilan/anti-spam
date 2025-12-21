@@ -32,6 +32,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
       target: development
+    # Run as host user to match volume mount permissions
     user: "${UID:-1000}:${GID:-1000}"
     ports:
       - "${BACKEND_PORT:-8000}:8000"
@@ -65,6 +66,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
       target: development
+    # Run as host user to match volume mount permissions
     user: "${UID:-1000}:${GID:-1000}"
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/antispam
@@ -87,6 +89,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
       target: development
+    # Run as host user to match volume mount permissions
     user: "${UID:-1000}:${GID:-1000}"
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/antispam
@@ -114,11 +117,10 @@ services:
     depends_on:
       - backend
     healthcheck:
-      test: ["CMD-SHELL", "test -s /usr/share/nginx/html/index.html"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/"]
       interval: 30s
-      timeout: 5s
-      retries: 12
-      start_period: 10s
+      timeout: 3s
+      retries: 3
 
   startup-notice:
     image: alpine:3.19

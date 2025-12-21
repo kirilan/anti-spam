@@ -407,11 +407,46 @@ make typecheck     # Type checking
 make check         # Run all checks
 ```
 
-### Building for Production
+### Docker Configuration
 
+The project uses multi-stage Docker builds with security-focused defaults:
+
+| File | Purpose | Target |
+|------|---------|--------|
+| `docker-compose.yml` | Local development | `development` stage |
+| `docker-compose.prod.yml` | Production deployment | `production` stage |
+
+**Security Features:**
+- All containers run as non-root user (`appuser` UID 1000)
+- Multi-stage builds minimize image size
+- Production images contain no build tools
+
+**Port Configuration** (via `.env`):
+```env
+POSTGRES_PORT=5432    # PostgreSQL
+REDIS_PORT=6379       # Redis
+BACKEND_PORT=8000     # FastAPI backend
+FRONTEND_PORT=3000    # Frontend (dev) / 80 (prod)
+```
+
+**Building for Production:**
 ```bash
 docker compose -f docker-compose.prod.yml up --build
 ```
+
+### CI/CD Pipeline
+
+GitHub Actions runs automatically on every push and pull request:
+
+| Job | Description |
+|-----|-------------|
+| `backend-lint` | Ruff linting + formatting check |
+| `backend-test` | pytest with PostgreSQL service |
+| `frontend-lint` | ESLint + TypeScript check |
+| `frontend-build` | Production build test |
+| `docker-build` | Docker image build test |
+
+Pre-commit hooks enforce code quality locally before commits.
 
 ---
 
