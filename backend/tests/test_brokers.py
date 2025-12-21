@@ -44,14 +44,17 @@ def test_get_broker_not_found(client: TestClient, auth_headers: dict):
 
 
 def test_create_broker_requires_admin(client: TestClient, auth_headers: dict):
-    """Test that creating a broker requires admin privileges"""
+    """Test that any authenticated user can create a broker"""
     broker_data = {
         "name": "New Broker",
         "domains": ["newbroker.com"],
         "privacy_email": "privacy@newbroker.com",
     }
     response = client.post("/brokers/", json=broker_data, headers=auth_headers)
-    assert response.status_code == 403
+    assert response.status_code == 201
+    data = response.json()
+    assert data["name"] == "New Broker"
+    assert "newbroker.com" in data["domains"]
 
 
 def test_create_broker_as_admin(client: TestClient, admin_auth_headers: dict):

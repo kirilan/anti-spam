@@ -7,7 +7,18 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
-from app.api import activities, admin, ai, analytics, auth, brokers, emails, requests, responses, tasks
+from app.api import (
+    activities,
+    admin,
+    ai,
+    analytics,
+    auth,
+    brokers,
+    emails,
+    requests,
+    responses,
+    tasks,
+)
 from app.config import settings
 from app.database import init_db
 from app.logging_config import setup_logging
