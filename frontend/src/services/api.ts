@@ -111,28 +111,32 @@ export const brokersApi = {
 
 // Emails API
 export const emailsApi = {
-  scan: async (userId: string, params: ScanRequest) => {
-    const response = await api.post(`/emails/scan?user_id=${userId}`, params)
+  scan: async (params: ScanRequest) => {
+    // Backend uses authenticated user from JWT
+    const response = await api.post(`/emails/scan`, params)
     return response.data
   },
 
-  getScans: async (userId: string, brokerOnly = false, limit = 1000) => {
+  getScans: async (brokerOnly = false, limit = 1000) => {
+    // Backend uses authenticated user from JWT
     const response = await api.get<EmailScan[]>(
-      `/emails/scans?user_id=${userId}&broker_only=${brokerOnly}&limit=${limit}`
+      `/emails/scans?broker_only=${brokerOnly}&limit=${limit}`
     )
     return response.data
   },
 
-  getScansPaged: async (userId: string, brokerOnly = false, limit = 10, offset = 0) => {
+  getScansPaged: async (brokerOnly = false, limit = 10, offset = 0) => {
+    // Backend uses authenticated user from JWT
     const response = await api.get<EmailScanPage>(
-      `/emails/scans/paged?user_id=${userId}&broker_only=${brokerOnly}&limit=${limit}&offset=${offset}`
+      `/emails/scans/paged?broker_only=${brokerOnly}&limit=${limit}&offset=${offset}`
     )
     return response.data
   },
 
-  getScanHistory: async (userId: string, limit = 10, offset = 0) => {
+  getScanHistory: async (limit = 10, offset = 0) => {
+    // Backend uses authenticated user from JWT
     const response = await api.get<ScanHistoryPage>(
-      `/emails/scan-history?user_id=${userId}&limit=${limit}&offset=${offset}`
+      `/emails/scan-history?limit=${limit}&offset=${offset}`
     )
     return response.data
   },
@@ -140,13 +144,15 @@ export const emailsApi = {
 
 // Deletion Requests API
 export const requestsApi = {
-  create: async (userId: string, data: DeletionRequestCreate) => {
-    const response = await api.post<DeletionRequest>(`/requests/?user_id=${userId}`, data)
+  create: async (data: DeletionRequestCreate) => {
+    // Backend uses authenticated user from JWT
+    const response = await api.post<DeletionRequest>(`/requests/`, data)
     return response.data
   },
 
-  list: async (userId: string) => {
-    const response = await api.get<DeletionRequest[]>(`/requests/?user_id=${userId}`)
+  list: async () => {
+    // Backend uses authenticated user from JWT
+    const response = await api.get<DeletionRequest[]>(`/requests/`)
     return response.data
   },
 
@@ -188,8 +194,9 @@ export const requestsApi = {
 
 // Tasks API
 export const tasksApi = {
-  startScan: async (userId: string, daysBack = 1, maxEmails = 100) => {
-    const response = await api.post<TaskResponse>(`/tasks/scan?user_id=${userId}`, {
+  startScan: async (daysBack = 1, maxEmails = 100) => {
+    // Backend uses authenticated user from JWT
+    const response = await api.post<TaskResponse>(`/tasks/scan`, {
       days_back: daysBack,
       max_emails: maxEmails,
     })
@@ -214,12 +221,14 @@ export const tasksApi = {
 
 // Responses API
 export const responsesApi = {
-  list: async (userId: string, requestId?: string) => {
-    const params = new URLSearchParams({ user_id: userId })
+  list: async (requestId?: string) => {
+    // Backend uses authenticated user from JWT, no userId param needed
+    const params = new URLSearchParams()
     if (requestId) {
       params.append('request_id', requestId)
     }
-    const response = await api.get<BrokerResponse[]>(`/responses/?${params}`)
+    const queryString = params.toString()
+    const response = await api.get<BrokerResponse[]>(`/responses/${queryString ? `?${queryString}` : ''}`)
     return response.data
   },
 
@@ -228,8 +237,9 @@ export const responsesApi = {
     return response.data
   },
 
-  scanResponses: async (userId: string, daysBack: number = 7) => {
-    const response = await api.post<TaskResponse>(`/responses/scan?user_id=${userId}&days_back=${daysBack}`)
+  scanResponses: async (daysBack: number = 7) => {
+    // Backend uses authenticated user from JWT, no userId param needed
+    const response = await api.post<TaskResponse>(`/responses/scan?days_back=${daysBack}`)
     return response.data
   },
 
@@ -262,8 +272,9 @@ export const aiApi = {
 
 // Analytics API
 export const analyticsApi = {
-  getStats: async (userId: string) => {
-    const response = await api.get(`/analytics/stats?user_id=${userId}`)
+  getStats: async () => {
+    // Backend uses authenticated user from JWT, no userId param needed
+    const response = await api.get(`/analytics/stats`)
     return response.data
   },
 
@@ -273,13 +284,15 @@ export const analyticsApi = {
     return response.data
   },
 
-  getTimeline: async (userId: string, days: number = 30) => {
-    const response = await api.get(`/analytics/timeline?user_id=${userId}&days=${days}`)
+  getTimeline: async (days: number = 30) => {
+    // Backend uses authenticated user from JWT, no userId param needed
+    const response = await api.get(`/analytics/timeline?days=${days}`)
     return response.data
   },
 
-  getResponseDistribution: async (userId: string) => {
-    const response = await api.get(`/analytics/response-distribution?user_id=${userId}`)
+  getResponseDistribution: async () => {
+    // Backend uses authenticated user from JWT, no userId param needed
+    const response = await api.get(`/analytics/response-distribution`)
     return response.data
   },
 }
@@ -287,12 +300,12 @@ export const analyticsApi = {
 // Activities API
 export const activitiesApi = {
   list: async (
-    userId: string,
     brokerId?: string | null,
     activityType?: string | null,
     daysBack = 30
   ) => {
-    const params = new URLSearchParams({ user_id: userId, days_back: String(daysBack) })
+    // Backend uses authenticated user from JWT, no userId param needed
+    const params = new URLSearchParams({ days_back: String(daysBack) })
     if (brokerId) params.append('broker_id', brokerId)
     if (activityType) params.append('activity_type', activityType)
 

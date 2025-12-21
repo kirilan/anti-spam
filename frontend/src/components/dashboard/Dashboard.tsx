@@ -27,7 +27,8 @@ export function Dashboard() {
   const { data: brokers } = useBrokers()
   const { data: responses } = useResponses()
   const { data: analytics } = useAnalytics()
-  const { data: taskHealth, isLoading: taskHealthLoading, refetch: refetchTaskHealth } = useTaskHealth()
+  // Fetch task health for all users
+  const { data: taskHealth, isLoading: taskHealthLoading, refetch: refetchTaskHealth } = useTaskHealth(true)
 
   const pendingRequests = requests?.filter((r) => r.status === 'pending').length || 0
   const sentRequests = requests?.filter((r) => r.status === 'sent').length || 0

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.dependencies.auth import require_admin
+from app.dependencies.auth import get_current_user
 from app.models.user import User
 from app.schemas.user import TokenRevokeResponse, UserRoleUpdate, UserSummary
 
@@ -12,9 +12,9 @@ router = APIRouter()
 @router.get("/users", response_model=list[UserSummary])
 def list_users(
     db: Session = Depends(get_db),
-    _: User = Depends(require_admin),
+    current_user: User = Depends(get_current_user),
 ):
-    """Return all users for admin management."""
+    """Return all users."""
     users = db.query(User).order_by(User.created_at.asc()).all()
     return [
         UserSummary(
@@ -35,14 +35,9 @@ def update_user_role(
     user_id: str,
     payload: UserRoleUpdate,
     db: Session = Depends(get_db),
-    current_admin: User = Depends(require_admin),
+    current_user: User = Depends(get_current_user),
 ):
     """Promote or demote a user."""
-    if str(current_admin.id) == user_id and not payload.is_admin:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="You cannot remove your own admin access.",
-        )
 
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
@@ -68,7 +63,7 @@ def update_user_role(
 def revoke_user_tokens(
     user_id: str,
     db: Session = Depends(get_db),
-    _: User = Depends(require_admin),
+    current_user: User = Depends(get_current_user),
 ):
     """Strip stored Gmail tokens so the user must re-authenticate."""
     user = db.query(User).filter(User.id == user_id).first()

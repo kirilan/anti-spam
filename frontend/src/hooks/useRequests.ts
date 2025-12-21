@@ -7,7 +7,7 @@ export function useRequests() {
 
   return useQuery({
     queryKey: ['requests', userId],
-    queryFn: () => requestsApi.list(userId!),
+    queryFn: () => requestsApi.list(),
     enabled: !!userId,
   })
 }
@@ -21,11 +21,10 @@ export function useRequest(requestId: string) {
 }
 
 export function useCreateRequest() {
-  const { userId } = useAuthStore()
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (brokerId: string) => requestsApi.create(userId!, { broker_id: brokerId }),
+    mutationFn: (brokerId: string) => requestsApi.create({ broker_id: brokerId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['requests'] })
       queryClient.invalidateQueries({ queryKey: ['analytics'] })

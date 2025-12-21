@@ -3,7 +3,7 @@ name = "data-deletion-assistant"
 version = "1.0.0"
 description = "Automate GDPR/CCPA data deletion requests"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.11,<3.13"
 dependencies = [
     "fastapi==0.104.1",
     "uvicorn[standard]==0.24.0",

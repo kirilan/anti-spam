@@ -11,7 +11,7 @@ export function useActivities(
 
   return useQuery({
     queryKey: ['activities', userId, brokerId, activityType, daysBack],
-    queryFn: () => activitiesApi.list(userId!, brokerId, activityType, daysBack),
+    queryFn: () => activitiesApi.list(brokerId, activityType, daysBack),
     enabled: !!userId,
   })
 }

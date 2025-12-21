@@ -87,7 +87,7 @@ def get_broker_response(
     if not response:
         raise HTTPException(status_code=404, detail="Response not found")
 
-    if str(response.user_id) != str(current_user.id) and not current_user.is_admin:
+    if str(response.user_id) != str(current_user.id):
         raise HTTPException(status_code=403, detail="Not authorized to view this response")
 
     return BrokerResponse(

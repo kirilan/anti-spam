@@ -8,7 +8,7 @@ export function useResponses(requestId?: string) {
 
   return useQuery<BrokerResponse[]>({
     queryKey: ['responses', userId, requestId],
-    queryFn: () => responsesApi.list(userId!, requestId),
+    queryFn: () => responsesApi.list(requestId),
     enabled: !!userId,
   })
 }
@@ -22,11 +22,10 @@ export function useResponse(responseId: string) {
 }
 
 export function useScanResponses() {
-  const { userId } = useAuthStore()
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (daysBack: number = 7) => responsesApi.scanResponses(userId!, daysBack),
+    mutationFn: (daysBack: number = 7) => responsesApi.scanResponses(daysBack),
     onSuccess: () => {
       // Invalidate and refetch responses after scan
       queryClient.invalidateQueries({ queryKey: ['responses'] })

@@ -11,6 +11,7 @@ VALID_CATEGORIES = [
     "marketing",
     "credit_bureau",
     "background_check",
+    "biometric",
     "other",
 ]
 

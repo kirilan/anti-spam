@@ -8,14 +8,13 @@ import {
   Database,
   FileText,
   LogOut,
-  ShieldCheck,
   ScanSearch,
   BarChart3,
   List,
   Settings,
 } from 'lucide-react'
 
-const baseNavItems = [
+const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/scan', label: 'Scan Emails', icon: ScanSearch },
   { href: '/brokers', label: 'Data Brokers', icon: Database },
@@ -43,7 +42,7 @@ export function Layout() {
 
           {/* Navigation */}
           <nav className="flex-1 space-y-1 p-4">
-            {[...baseNavItems, ...(user?.is_admin ? [{ href: '/admin/users', label: 'Admin', icon: ShieldCheck }] : [])].map((item) => {
+            {navItems.map((item) => {
               const Icon = item.icon
               const isActive = location.pathname === item.href
               return (

@@ -82,7 +82,7 @@ export function EmailScanner() {
     setIsStarting(true)
     setScanError(null)
     try {
-      const response = await tasksApi.startScan(userId, daysBack, maxEmails)
+      const response = await tasksApi.startScan(daysBack, maxEmails)
       setTaskId(response.task_id)
       setTaskStatus(null)
     } catch (error) {

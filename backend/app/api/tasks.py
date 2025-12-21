@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 from app.celery_app import celery_app
-from app.dependencies.auth import get_current_user, require_admin
+from app.dependencies.auth import get_current_user
 from app.models.user import User
 from app.tasks.email_tasks import scan_inbox_task
 
@@ -66,7 +66,7 @@ def start_scan_task(
 
 
 @router.get("/health", response_model=TaskQueueHealth)
-def get_task_queue_health(current_user: User = Depends(require_admin)):
+def get_task_queue_health(current_user: User = Depends(get_current_user)):
     """Return basic Celery worker and queue stats"""
     inspect = celery_app.control.inspect()
     stats = inspect.stats() if inspect else None

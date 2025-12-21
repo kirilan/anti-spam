@@ -37,13 +37,7 @@ def get_broker_ranking(
     Shows brokers sorted by success rate and response time.
     If user_id is provided, shows ranking based on that user's requests only.
     """
-    if user_id and user_id != str(current_user.id):
-        if not current_user.is_admin:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Admin privileges required to view other users' analytics",
-            )
-    else:
+    if not user_id:
         user_id = str(current_user.id)
 
     service = AnalyticsService(db)

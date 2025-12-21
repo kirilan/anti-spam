@@ -8,7 +8,7 @@ export function useEmailScans(brokerOnly = false, limit = 1000) {
 
   return useQuery({
     queryKey: ['emailScans', userId, brokerOnly, limit],
-    queryFn: () => emailsApi.getScans(userId!, brokerOnly, limit),
+    queryFn: () => emailsApi.getScans(brokerOnly, limit),
     enabled: !!userId,
     staleTime: 0, // Always refetch to get latest data
   })
@@ -19,7 +19,7 @@ export function useEmailScansPaged(brokerOnly: boolean, limit: number, offset: n
 
   return useQuery({
     queryKey: ['emailScansPaged', userId, brokerOnly, limit, offset],
-    queryFn: () => emailsApi.getScansPaged(userId!, brokerOnly, limit, offset),
+    queryFn: () => emailsApi.getScansPaged(brokerOnly, limit, offset),
     enabled: !!userId,
     staleTime: 0,
   })
@@ -30,18 +30,17 @@ export function useScanHistory(limit: number, offset: number) {
 
   return useQuery({
     queryKey: ['scanHistory', userId, limit, offset],
-    queryFn: () => emailsApi.getScanHistory(userId!, limit, offset),
+    queryFn: () => emailsApi.getScanHistory(limit, offset),
     enabled: !!userId,
     staleTime: 0,
   })
 }
 
 export function useScanInbox() {
-  const { userId } = useAuthStore()
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (params: ScanRequest) => emailsApi.scan(userId!, params),
+    mutationFn: (params: ScanRequest) => emailsApi.scan(params),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['emailScans'] })
     },
@@ -49,11 +48,9 @@ export function useScanInbox() {
 }
 
 export function useStartScanTask() {
-  const { userId } = useAuthStore()
-
   return useMutation({
     mutationFn: ({ daysBack, maxEmails }: { daysBack: number; maxEmails: number }) =>
-      tasksApi.startScan(userId!, daysBack, maxEmails),
+      tasksApi.startScan(daysBack, maxEmails),
   })
 }
 

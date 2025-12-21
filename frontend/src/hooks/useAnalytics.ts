@@ -37,7 +37,7 @@ export function useAnalytics() {
 
   return useQuery<AnalyticsStats>({
     queryKey: ['analytics', 'stats', userId],
-    queryFn: () => analyticsApi.getStats(userId!),
+    queryFn: () => analyticsApi.getStats(),
     enabled: !!userId,
   })
 }
@@ -58,7 +58,7 @@ export function useTimeline(days: number = 30) {
 
   return useQuery<TimelineData[]>({
     queryKey: ['analytics', 'timeline', userId, days],
-    queryFn: () => analyticsApi.getTimeline(userId!, days),
+    queryFn: () => analyticsApi.getTimeline(days),
     enabled: !!userId,
   })
 }
@@ -68,7 +68,7 @@ export function useResponseDistribution() {
 
   return useQuery<ResponseDistribution[]>({
     queryKey: ['analytics', 'response-distribution', userId],
-    queryFn: () => analyticsApi.getResponseDistribution(userId!),
+    queryFn: () => analyticsApi.getResponseDistribution(),
     enabled: !!userId,
   })
 }
