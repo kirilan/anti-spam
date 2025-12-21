@@ -1,7 +1,6 @@
 import { useLogin } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Shield } from 'lucide-react'
 
 export function LoginPage() {
   const { login } = useLogin()
@@ -10,10 +9,10 @@ export function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary">
-            <Shield className="h-6 w-6 text-primary-foreground" />
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-secondary">
+            <img src="/logo-mark.png" alt="OpenShred logo" className="h-full w-full object-cover" />
           </div>
-          <CardTitle className="text-2xl">Data Deletion Assistant</CardTitle>
+          <CardTitle className="text-2xl">OpenShred</CardTitle>
           <CardDescription>
             Automatically find data brokers in your inbox and generate GDPR/CCPA deletion requests
           </CardDescription>

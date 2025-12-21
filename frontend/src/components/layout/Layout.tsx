@@ -8,7 +8,6 @@ import {
   Database,
   FileText,
   LogOut,
-  Shield,
   ShieldCheck,
   ScanSearch,
   BarChart3,
@@ -38,8 +37,8 @@ export function Layout() {
         <div className="flex h-full flex-col">
           {/* Logo */}
           <div className="flex h-16 items-center gap-2 border-b px-6">
-            <Shield className="h-6 w-6 text-primary" />
-            <span className="text-lg font-semibold">Data Deletion</span>
+            <img src="/logo-mark.png" alt="OpenShred logo" className="h-8 w-8" />
+            <span className="text-lg font-semibold">OpenShred</span>
           </div>
 
           {/* Navigation */}

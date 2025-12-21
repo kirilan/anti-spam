@@ -1,8 +1,11 @@
-# 🛡️ Data Deletion Assistant
+# 🛡️ OpenShred
 
-**Automate your GDPR/CCPA data deletion requests and take back control of your personal information.**
+**YOUR OPEN-SOURCE DIGITAL SHREDDER.**
+**Automate GDPR/CCPA requests, purge your data from broker databases, and permanently reclaim your inbox.**
 
 A comprehensive web application that scans your Gmail inbox for data broker communications, generates legally compliant deletion requests, and tracks broker responses—all with an intuitive dashboard and powerful analytics.
+
+![OpenShred demo](https://github.com/kirilan/OpenShred/blob/kirilan-asset/anti-spam.gif?raw=true)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/)
@@ -214,8 +217,8 @@ To switch back to daily scheduling, adjust the Beat schedule in `backend/app/cel
 #### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/kirilan/anti-spam.git
-cd anti-spam
+git clone https://github.com/kirilan/OpenShred.git
+cd OpenShred
 ```
 
 #### 2. Set Up Google OAuth Credentials
@@ -229,7 +232,7 @@ cd anti-spam
    - Go to **APIs & Services > Credentials**
    - Click **Create Credentials > OAuth client ID**
    - Application type: **Web application**
-   - Name: `Data Deletion Assistant`
+   - Name: `OpenShred`
    - **Authorized redirect URIs**:
      - `http://localhost:8000/auth/callback`
      - `http://localhost:3000/oauth-callback`
@@ -446,7 +449,7 @@ docker-compose -f docker-compose.prod.yml up --build
 ## 📁 Project Structure
 
 ```
-data-deletion-assistant/
+OpenShred/
 ├── backend/
 │   ├── app/
 │   │   ├── main.py                 # FastAPI application entry
@@ -593,8 +596,8 @@ If you encounter issues:
 
 - **Google OAuth Setup**: See [Google Cloud Documentation](https://cloud.google.com/docs/authentication)
 - **API Usage**: Check the interactive docs at http://localhost:8000/docs
-- **Bug Reports**: [Open an issue](https://github.com/yourusername/data-deletion-assistant/issues)
-- **Feature Requests**: [Start a discussion](https://github.com/yourusername/data-deletion-assistant/discussions)
+- **Bug Reports**: [Open an issue](https://github.com/kirilan/OpenShred/issues)
+- **Feature Requests**: [Start a discussion](https://github.com/kirilan/OpenShred/discussions)
 
 ---
 
