@@ -16,7 +16,9 @@ import {
   Mail,
   RotateCw,
   Clock,
-  AlertTriangle
+  AlertTriangle,
+  Send,
+  Inbox
 } from 'lucide-react'
 
 export function EmailScanner() {
@@ -28,12 +30,11 @@ export function EmailScanner() {
   const [maxEmails, setMaxEmails] = useState(100)
   const [scanError, setScanError] = useState<{ message: string; retryAfter?: number } | null>(null)
   const [retryCountdown, setRetryCountdown] = useState<number | null>(null)
-  const [showBrokersOnly, setShowBrokersOnly] = useState(true)
   const [resultsPage, setResultsPage] = useState(0)
   const [historyPage, setHistoryPage] = useState(0)
   const pageSize = 10
 
-  const scanResults = useEmailScansPaged(showBrokersOnly, pageSize, resultsPage * pageSize)
+  const scanResults = useEmailScansPaged('all', pageSize, resultsPage * pageSize)
   const scanHistory = useScanHistory(pageSize, historyPage * pageSize)
 
   // Poll for task status
@@ -136,10 +137,6 @@ export function EmailScanner() {
   const isScanning = taskStatus?.state === 'PROGRESS' || taskStatus?.state === 'PENDING' || taskStatus?.state === 'STARTED'
   const isComplete = taskStatus?.state === 'SUCCESS'
   const isFailed = taskStatus?.state === 'FAILURE'
-
-  useEffect(() => {
-    setResultsPage(0)
-  }, [showBrokersOnly])
 
   const getLastScanText = () => {
     if (!user?.last_scan_at) return 'Never scanned'
@@ -441,7 +438,7 @@ export function EmailScanner() {
             <div>
               <CardTitle>Email Results</CardTitle>
               <CardDescription>
-                Showing {showBrokersOnly ? 'broker emails only' : 'all scanned emails'}
+                Broker emails detected in your inbox
               </CardDescription>
             </div>
             {scanResults.data && (
@@ -449,13 +446,6 @@ export function EmailScanner() {
                 Total emails: {scanResults.data.total}
               </Badge>
             )}
-            <Button
-              variant={showBrokersOnly ? 'default' : 'outline'}
-              onClick={() => setShowBrokersOnly((prev) => !prev)}
-            >
-              <AlertTriangle className="mr-2 h-4 w-4" />
-              {showBrokersOnly ? 'Showing Brokers Only' : 'Show Brokers Only'}
-            </Button>
           </CardHeader>
           <CardContent className="space-y-4">
             {scanResults.isLoading ? (
@@ -542,6 +532,17 @@ function EmailCard({ email }: { email: EmailScan }) {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {email.email_direction === 'sent' ? (
+              <Badge variant="outline">
+                <Send className="mr-1 h-3 w-3" />
+                Sent
+              </Badge>
+            ) : (
+              <Badge variant="outline">
+                <Inbox className="mr-1 h-3 w-3" />
+                Received
+              </Badge>
+            )}
             {email.is_broker_email ? (
               <Badge variant="destructive">
                 <AlertTriangle className="mr-1 h-3 w-3" />

@@ -2,7 +2,7 @@ import { useMemo, useState, type ComponentType } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { useRequests, useCreateRequest } from '@/hooks/useRequests'
+import { useRequests, useCreateRequest, useRequestThread } from '@/hooks/useRequests'
 import { useEmailScans } from '@/hooks/useEmails'
 import { useBrokers } from '@/hooks/useBrokers'
 import { useResponses, useScanResponses, useClassifyResponse } from '@/hooks/useResponses'
@@ -28,7 +28,9 @@ import {
   CheckCircle2,
   HelpCircle,
   XCircle,
-  AlertCircle
+  AlertCircle,
+  Inbox,
+  MessageCircle
 } from 'lucide-react'
 
 export function RequestList() {
@@ -431,6 +433,13 @@ function RequestCard({
   const [saveStatuses, setSaveStatuses] = useState<Record<string, 'idle' | 'saving' | 'saved' | 'error'>>({})
 
   const [showTimeline, setShowTimeline] = useState(false)
+  const [showThread, setShowThread] = useState(false)
+
+  // Fetch thread emails when thread view is opened
+  const { data: threadEmails, isLoading: threadLoading } = useRequestThread(
+    showThread && request.gmail_thread_id ? request.id : null
+  )
+
   const nextRetryDate = request.next_retry_at ? new Date(request.next_retry_at) : null
   const isRateLimited = nextRetryDate ? nextRetryDate.getTime() > Date.now() : false
 
@@ -653,6 +662,16 @@ function RequestCard({
                 <History className="h-4 w-4 mr-1" />
                 {showTimeline ? 'Hide history' : 'View history'}
               </Button>
+              {request.gmail_thread_id && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowThread((prev) => !prev)}
+                >
+                  <MessageCircle className="h-4 w-4 mr-1" />
+                  {showThread ? 'Hide thread' : 'View thread'}
+                </Button>
+              )}
             </div>
 
             {isRateLimited && nextRetryDate && (
@@ -698,6 +717,84 @@ function RequestCard({
                       </div>
                     )
                   })
+                )}
+              </div>
+            )}
+
+            {showThread && (
+              <div className="mt-4 border-t pt-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold">Email Thread</p>
+                  {threadEmails && threadEmails.length > 0 && (
+                    <Badge variant="outline">{threadEmails.length} emails</Badge>
+                  )}
+                </div>
+                {threadLoading ? (
+                  <div className="flex items-center justify-center py-4">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : !threadEmails || threadEmails.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No emails found in this thread.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {threadEmails.map((email) => {
+                      const responseTypeConfig = email.response_type ?
+                        {
+                          confirmation: { label: 'Confirmation', color: 'text-green-600', bg: 'bg-green-50' },
+                          rejection: { label: 'Rejection', color: 'text-red-600', bg: 'bg-red-50' },
+                          acknowledgment: { label: 'Acknowledged', color: 'text-blue-600', bg: 'bg-blue-50' },
+                          request_info: { label: 'Info Requested', color: 'text-yellow-600', bg: 'bg-yellow-50' },
+                          unknown: { label: 'Unknown', color: 'text-gray-600', bg: 'bg-gray-50' },
+                        }[email.response_type] : null
+
+                      return (
+                        <div key={email.id} className="rounded-lg border bg-muted/30 p-4 space-y-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="space-y-1 flex-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <Badge variant={email.direction === 'sent' ? 'default' : 'outline'}>
+                                  {email.direction === 'sent' ? (
+                                    <><Send className="h-3 w-3 mr-1" />Sent</>
+                                  ) : (
+                                    <><Inbox className="h-3 w-3 mr-1" />Received</>
+                                  )}
+                                </Badge>
+                                {responseTypeConfig && (
+                                  <Badge variant="outline" className={`${responseTypeConfig.bg} ${responseTypeConfig.color}`}>
+                                    {responseTypeConfig.label}
+                                  </Badge>
+                                )}
+                                {email.confidence_score !== null && (
+                                  <Badge variant="secondary">
+                                    {Math.round(email.confidence_score * 100)}% confidence
+                                  </Badge>
+                                )}
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                <span className="font-medium">From:</span> {email.sender_email}
+                              </p>
+                              {email.recipient_email && (
+                                <p className="text-xs text-muted-foreground">
+                                  <span className="font-medium">To:</span> {email.recipient_email}
+                                </p>
+                              )}
+                              {email.subject && (
+                                <p className="text-sm font-medium mt-1">{email.subject}</p>
+                              )}
+                            </div>
+                            <span className="text-xs text-muted-foreground whitespace-nowrap">
+                              {email.received_date ? formatDate(email.received_date) : 'Unknown date'}
+                            </span>
+                          </div>
+                          {email.body_preview && (
+                            <div className="rounded-md bg-background/80 p-3 text-xs text-muted-foreground max-h-40 overflow-y-auto">
+                              {email.body_preview}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
                 )}
               </div>
             )}

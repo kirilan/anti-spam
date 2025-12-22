@@ -14,12 +14,12 @@ export function useEmailScans(brokerOnly = false, limit = 1000) {
   })
 }
 
-export function useEmailScansPaged(brokerOnly: boolean, limit: number, offset: number) {
+export function useEmailScansPaged(direction: 'all' | 'sent' | 'received', limit: number, offset: number) {
   const { userId } = useAuthStore()
 
   return useQuery({
-    queryKey: ['emailScansPaged', userId, brokerOnly, limit, offset],
-    queryFn: () => emailsApi.getScansPaged(brokerOnly, limit, offset),
+    queryKey: ['emailScansPaged', userId, direction, limit, offset],
+    queryFn: () => emailsApi.getScansPaged(direction, limit, offset),
     enabled: !!userId,
     staleTime: 0,
   })

@@ -122,8 +122,11 @@ def scan_emails(
                 user_id=str(scan.user_id),
                 broker_id=str(scan.broker_id) if scan.broker_id else None,
                 gmail_message_id=scan.gmail_message_id,
+                gmail_thread_id=scan.gmail_thread_id,
+                email_direction=scan.email_direction,
                 sender_email=scan.sender_email,
                 sender_domain=scan.sender_domain,
+                recipient_email=scan.recipient_email,
                 subject=scan.subject,
                 received_date=scan.received_date,
                 is_broker_email=scan.is_broker_email,
@@ -196,8 +199,11 @@ def get_scans(
             user_id=str(scan.user_id),
             broker_id=str(scan.broker_id) if scan.broker_id else None,
             gmail_message_id=scan.gmail_message_id,
+            gmail_thread_id=scan.gmail_thread_id,
+            email_direction=scan.email_direction,
             sender_email=scan.sender_email,
             sender_domain=scan.sender_domain,
+            recipient_email=scan.recipient_email,
             subject=scan.subject,
             received_date=scan.received_date,
             is_broker_email=scan.is_broker_email,
@@ -212,17 +218,32 @@ def get_scans(
 
 @router.get("/scans/paged", response_model=EmailScanPage)
 def get_scans_paged(
-    broker_only: bool = False,
+    direction: str = "all",
     limit: int = 10,
     offset: int = 0,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Get paginated email scan results for a user"""
-    query = db.query(EmailScanModel).filter(EmailScanModel.user_id == current_user.id)
+    """
+    Get paginated email scan results for a user
 
-    if broker_only:
-        query = query.filter(EmailScanModel.is_broker_email)
+    Args:
+        direction: Filter by email direction ('all', 'sent', 'received')
+        limit: Number of results per page
+        offset: Pagination offset
+    """
+    query = (
+        db.query(EmailScanModel)
+        .filter(EmailScanModel.user_id == current_user.id)
+        .filter(EmailScanModel.is_broker_email == True)  # Always show broker emails only
+    )
+
+    # Apply direction filter
+    if direction == "sent":
+        query = query.filter(EmailScanModel.email_direction == "sent")
+    elif direction == "received":
+        query = query.filter(EmailScanModel.email_direction == "received")
+    # direction == "all" - no additional filter
 
     limit = min(max(limit, 1), 100)
     offset = max(offset, 0)
@@ -242,8 +263,11 @@ def get_scans_paged(
                 user_id=str(scan.user_id),
                 broker_id=str(scan.broker_id) if scan.broker_id else None,
                 gmail_message_id=scan.gmail_message_id,
+                gmail_thread_id=scan.gmail_thread_id,
+                email_direction=scan.email_direction,
                 sender_email=scan.sender_email,
                 sender_domain=scan.sender_domain,
+                recipient_email=scan.recipient_email,
                 subject=scan.subject,
                 received_date=scan.received_date,
                 is_broker_email=scan.is_broker_email,

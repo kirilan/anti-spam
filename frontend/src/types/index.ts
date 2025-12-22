@@ -42,6 +42,8 @@ export interface EmailScan {
   user_id: string
   broker_id: string | null
   gmail_message_id: string
+  gmail_thread_id: string | null
+  email_direction: 'sent' | 'received'
   sender_email: string
   sender_domain: string
   recipient_email?: string
@@ -129,6 +131,20 @@ export interface EmailPreview {
   body: string
   to_email: string | null
   broker_name: string
+}
+
+export interface ThreadEmail {
+  id: string
+  gmail_message_id: string
+  gmail_thread_id: string | null
+  sender_email: string
+  recipient_email: string | null
+  subject: string | null
+  body_preview: string | null
+  direction: 'sent' | 'received'
+  received_date: string | null
+  response_type: BrokerResponseType | null
+  confidence_score: number | null
 }
 
 // AI settings/types

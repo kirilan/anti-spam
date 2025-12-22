@@ -16,6 +16,8 @@ class EmailScan(EmailScanBase):
     id: str
     user_id: str
     broker_id: str | None = None
+    gmail_thread_id: str | None = None
+    email_direction: str = "received"
     recipient_email: str | None = None
     received_date: datetime | None = None
     classification_notes: str | None = None

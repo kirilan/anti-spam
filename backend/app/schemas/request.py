@@ -83,3 +83,22 @@ class EmailPreview(BaseModel):
     body: str
     to_email: str | None = None
     broker_name: str
+
+
+class ThreadEmail(BaseModel):
+    """Email in a deletion request thread"""
+
+    id: str
+    gmail_message_id: str
+    gmail_thread_id: str | None = None
+    sender_email: str
+    recipient_email: str | None = None
+    subject: str | None = None
+    body_preview: str | None = None
+    direction: str  # 'sent' or 'received'
+    received_date: datetime | None = None
+    response_type: str | None = None
+    confidence_score: float | None = None
+
+    class Config:
+        from_attributes = True

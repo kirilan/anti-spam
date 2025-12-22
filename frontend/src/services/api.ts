@@ -19,6 +19,7 @@ import type {
   AiClassifyResult,
   EmailScanPage,
   ScanHistoryPage,
+  ThreadEmail,
 } from '@/types'
 
 // Use empty string for production (nginx proxies /api, /auth, etc.)
@@ -125,10 +126,11 @@ export const emailsApi = {
     return response.data
   },
 
-  getScansPaged: async (brokerOnly = false, limit = 10, offset = 0) => {
+  getScansPaged: async (direction: 'all' | 'sent' | 'received' = 'all', limit = 10, offset = 0) => {
     // Backend uses authenticated user from JWT
+    // Note: Backend now always filters to broker emails only
     const response = await api.get<EmailScanPage>(
-      `/emails/scans/paged?broker_only=${brokerOnly}&limit=${limit}&offset=${offset}`
+      `/emails/scans/paged?direction=${direction}&limit=${limit}&offset=${offset}`
     )
     return response.data
   },
@@ -188,6 +190,11 @@ export const requestsApi = {
 
   aiClassify: async (requestId: string) => {
     const response = await api.post<AiClassifyResult>(`/requests/${requestId}/ai-classify`)
+    return response.data
+  },
+
+  getThread: async (requestId: string) => {
+    const response = await api.get<ThreadEmail[]>(`/requests/${requestId}/thread`)
     return response.data
   },
 }

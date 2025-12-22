@@ -65,3 +65,12 @@ export function useEmailPreview(requestId: string) {
     enabled: !!requestId,
   })
 }
+
+export function useRequestThread(requestId: string | null) {
+  return useQuery({
+    queryKey: ['requestThread', requestId],
+    queryFn: () => requestsApi.getThread(requestId!),
+    enabled: !!requestId,
+    staleTime: 30000, // Cache for 30 seconds
+  })
+}

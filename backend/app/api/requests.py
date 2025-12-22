@@ -13,6 +13,7 @@ from app.schemas.request import (
     DeletionRequestCreate,
     DeletionRequestUpdate,
     EmailPreview,
+    ThreadEmail,
 )
 from app.services.activity_log_service import ActivityLogService
 from app.services.ai_settings import resolve_model
@@ -391,3 +392,82 @@ def ai_classify_request_responses(
             model=ai_output.get("model", model), responses=ai_responses
         ),
     )
+
+
+@router.get("/{request_id}/thread", response_model=list[ThreadEmail])
+def get_request_thread(
+    request_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Get all emails in the thread for a deletion request
+
+    Returns chronologically sorted emails including:
+    - Sent email(s) from user to broker
+    - Received responses from broker
+    - Response type classification if available
+    """
+    from app.models.broker_response import BrokerResponse as BrokerResponseModel
+    from app.models.email_scan import EmailScan as EmailScanModel
+
+    # Get deletion request
+    service = DeletionRequestService(db)
+    req = service.get_request_by_id(request_id)
+
+    if not req:
+        raise HTTPException(status_code=404, detail="Request not found")
+
+    if str(req.user_id) != str(current_user.id):
+        raise HTTPException(status_code=403, detail="Not authorized to view this request")
+
+    # If no thread_id, return empty list
+    if not req.gmail_thread_id:
+        return []
+
+    # Get all email scans in this thread
+    email_scans = (
+        db.query(EmailScanModel)
+        .filter(
+            EmailScanModel.user_id == current_user.id,
+            EmailScanModel.gmail_thread_id == req.gmail_thread_id,
+        )
+        .all()
+    )
+
+    # Get all broker responses linked to this request
+    broker_responses = (
+        db.query(BrokerResponseModel)
+        .filter(BrokerResponseModel.deletion_request_id == req.id)
+        .all()
+    )
+
+    # Build response map keyed by gmail_message_id
+    response_map = {resp.gmail_message_id: resp for resp in broker_responses}
+
+    # Convert to ThreadEmail objects
+    thread_emails = []
+    for scan in email_scans:
+        # Check if this email has a classified response
+        response = response_map.get(scan.gmail_message_id)
+
+        thread_emails.append(
+            ThreadEmail(
+                id=str(scan.id),
+                gmail_message_id=scan.gmail_message_id,
+                gmail_thread_id=scan.gmail_thread_id,
+                sender_email=scan.sender_email,
+                recipient_email=scan.recipient_email,
+                subject=scan.subject,
+                body_preview=scan.body_preview,
+                direction=scan.email_direction,
+                received_date=scan.received_date,
+                response_type=response.response_type.value if response else None,
+                confidence_score=response.confidence_score if response else None,
+            )
+        )
+
+    # Sort chronologically by received_date
+    thread_emails.sort(key=lambda e: e.received_date or datetime.min)
+
+    return thread_emails

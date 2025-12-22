@@ -17,6 +17,8 @@ class EmailScan(Base):
 
     # Gmail details
     gmail_message_id = Column(String, nullable=False, unique=True, index=True)
+    gmail_thread_id = Column(String, nullable=True, index=True)  # Thread grouping
+    email_direction = Column(String, nullable=False, default='received')  # 'sent' or 'received'
     sender_email = Column(String, nullable=False)
     sender_domain = Column(String, nullable=False, index=True)
     recipient_email = Column(String, nullable=True)

@@ -299,3 +299,48 @@ class GmailService:
         except Exception as e:
             # Handle other failures
             raise Exception(f"Failed to send email: {str(e)}")
+
+    def list_sent_messages(self, user: User, query: str = "", max_results: int = 100) -> list[dict]:
+        """
+        List sent Gmail messages for a user
+
+        Args:
+            user: User object
+            query: Additional Gmail search query (will be combined with 'in:sent')
+            max_results: Maximum number of messages to fetch
+
+        Returns:
+            List of message metadata (id, threadId)
+        """
+        credentials = self.get_credentials(user)
+        service = build("gmail", "v1", credentials=credentials)
+
+        # Always search in sent folder
+        full_query = f"in:sent {query}".strip()
+
+        results = (
+            service.users().messages().list(userId="me", q=full_query, maxResults=max_results).execute()
+        )
+
+        return results.get("messages", [])
+
+    def get_thread_messages(self, user: User, thread_id: str) -> list[dict]:
+        """
+        Get all messages in a Gmail thread
+
+        Args:
+            user: User object
+            thread_id: Gmail thread ID
+
+        Returns:
+            List of full message objects in the thread
+        """
+        credentials = self.get_credentials(user)
+        service = build("gmail", "v1", credentials=credentials)
+
+        try:
+            thread = service.users().threads().get(userId="me", id=thread_id, format="full").execute()
+            return thread.get("messages", [])
+        except Exception as e:
+            # Return empty list if thread not found or error
+            return []
