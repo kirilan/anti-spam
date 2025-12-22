@@ -235,7 +235,7 @@ def get_scans_paged(
     query = (
         db.query(EmailScanModel)
         .filter(EmailScanModel.user_id == current_user.id)
-        .filter(EmailScanModel.is_broker_email == True)  # Always show broker emails only
+        .filter(EmailScanModel.is_broker_email.is_(True))  # Always show broker emails only
     )
 
     # Apply direction filter

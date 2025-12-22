@@ -26,7 +26,7 @@ class DeletionRequest(Base):
 
     # Request details
     status = Column(Enum(RequestStatus), default=RequestStatus.PENDING, nullable=False)
-    source = Column(String, default='manual', nullable=False)  # 'manual' or 'auto_discovered'
+    source = Column(String, default="manual", nullable=False)  # 'manual' or 'auto_discovered'
     generated_email_subject = Column(String, nullable=True)
     generated_email_body = Column(Text, nullable=True)
 

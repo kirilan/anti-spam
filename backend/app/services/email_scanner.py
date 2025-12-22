@@ -277,7 +277,6 @@ class EmailScanner:
         3. Determine status based on response classification
         4. Create DeletionRequest with source='auto_discovered'
         """
-        from app.models.broker_response import ResponseType
 
         for scan in sent_scans:
             # Skip if not linked to a broker

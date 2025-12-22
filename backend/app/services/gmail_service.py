@@ -319,7 +319,10 @@ class GmailService:
         full_query = f"in:sent {query}".strip()
 
         results = (
-            service.users().messages().list(userId="me", q=full_query, maxResults=max_results).execute()
+            service.users()
+            .messages()
+            .list(userId="me", q=full_query, maxResults=max_results)
+            .execute()
         )
 
         return results.get("messages", [])
@@ -339,8 +342,10 @@ class GmailService:
         service = build("gmail", "v1", credentials=credentials)
 
         try:
-            thread = service.users().threads().get(userId="me", id=thread_id, format="full").execute()
+            thread = (
+                service.users().threads().get(userId="me", id=thread_id, format="full").execute()
+            )
             return thread.get("messages", [])
-        except Exception as e:
+        except Exception:
             # Return empty list if thread not found or error
             return []
