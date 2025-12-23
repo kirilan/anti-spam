@@ -95,6 +95,7 @@ class ThreadEmail(BaseModel):
     recipient_email: str | None = None
     subject: str | None = None
     body_preview: str | None = None
+    body_text: str | None = None
     direction: str  # 'sent' or 'received'
     received_date: datetime | None = None
     response_type: str | None = None

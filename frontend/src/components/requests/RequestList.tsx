@@ -92,6 +92,23 @@ export function RequestList() {
     ))
   }, [previewRequest, responses])
 
+  const previewNextRetry = previewRequest?.next_retry_at
+    ? new Date(previewRequest.next_retry_at)
+    : null
+  const previewIsRateLimited = previewNextRetry
+    ? previewNextRetry.getTime() > Date.now()
+    : false
+
+  const handlePreviewSend = async () => {
+    if (!previewRequest) {
+      return
+    }
+    const success = await handleSendEmail(previewRequest.id)
+    if (success) {
+      setPreviewRequest(null)
+    }
+  }
+
   const handleCreateRequest = async (brokerId: string) => {
     setCreatingFor(brokerId)
     try {
@@ -102,7 +119,7 @@ export function RequestList() {
     }
   }
 
-  const handleSendEmail = async (requestId: string) => {
+  const handleSendEmail = async (requestId: string): Promise<boolean> => {
     setSendingRequestId(requestId)
     try {
       const { requestsApi } = await import('@/services/api')
@@ -112,12 +129,14 @@ export function RequestList() {
       queryClient.invalidateQueries({ queryKey: ['analytics', 'stats'] })
       queryClient.invalidateQueries({ queryKey: ['analytics', 'timeline'] })
       queryClient.invalidateQueries({ queryKey: ['analytics', 'broker-ranking'] })
+      return true
     } catch (error: any) {
       console.error('Failed to send email:', error)
       if (error.response?.status === 403 || error.response?.data?.detail?.includes('permission')) {
         setPermissionError(true)
       }
       await refetch()
+      return false
     } finally {
       setSendingRequestId(null)
     }
@@ -311,7 +330,6 @@ export function RequestList() {
               request={request}
               brokerName={brokerMap.get(request.broker_id) || 'Unknown Broker'}
               onPreview={() => setPreviewRequest(request)}
-              onSendEmail={handleSendEmail}
               isSending={sendingRequestId === request.id}
               onAiAssist={handleAiAssist}
               isAiProcessing={aiProcessingRequestId === request.id}
@@ -337,6 +355,14 @@ export function RequestList() {
       <EmailPreviewDialog
         request={previewRequest}
         responses={previewResponses}
+        onSend={handlePreviewSend}
+        isSending={previewRequest ? sendingRequestId === previewRequest.id : false}
+        sendDisabled={previewIsRateLimited}
+        sendDisabledReason={
+          previewIsRateLimited && previewNextRetry
+            ? `Gmail rate limit active until ${previewNextRetry.toLocaleTimeString()}.`
+            : undefined
+        }
         onClose={() => setPreviewRequest(null)}
       />
 
@@ -461,7 +487,6 @@ function RequestCard({
   request,
   brokerName,
   onPreview,
-  onSendEmail,
   isSending,
   onAiAssist,
   isAiProcessing,
@@ -473,7 +498,6 @@ function RequestCard({
   request: DeletionRequest
   brokerName: string
   onPreview: () => void
-  onSendEmail: (requestId: string) => void
   isSending: boolean
   onAiAssist: (requestId: string) => void
   isAiProcessing: boolean
@@ -509,11 +533,19 @@ function RequestCard({
 
   const [showTimeline, setShowTimeline] = useState(false)
   const [showThread, setShowThread] = useState(false)
+  const [expandedThreadEmails, setExpandedThreadEmails] = useState<Record<string, boolean>>({})
 
   // Fetch thread emails when thread view is opened
   const { data: threadEmails, isLoading: threadLoading } = useRequestThread(
     showThread && request.gmail_thread_id ? request.id : null
   )
+
+  const toggleThreadEmail = (emailId: string) => {
+    setExpandedThreadEmails((prev) => ({
+      ...prev,
+      [emailId]: !prev[emailId],
+    }))
+  }
 
   const nextRetryDate = request.next_retry_at ? new Date(request.next_retry_at) : null
   const isRateLimited = nextRetryDate ? nextRetryDate.getTime() > Date.now() : false
@@ -553,10 +585,10 @@ function RequestCard({
 
     events.push({
       id: `${request.id}-preview`,
-      label: 'Email preview ready',
+      label: 'Draft ready',
       timestamp: request.created_at,
       icon: Eye,
-      actionLabel: 'Open preview',
+      actionLabel: 'Preview & send',
       onAction: onPreview,
     })
 
@@ -681,32 +713,21 @@ function RequestCard({
 
           <div className="flex-1 min-w-[240px]">
             <div className="flex flex-wrap gap-2 justify-start md:justify-end">
-              <Button variant="outline" size="sm" onClick={onPreview}>
-                <Eye className="h-4 w-4 mr-1" />
-                Preview
-              </Button>
-
               {request.status === 'pending' && (
                 <Button
                   size="sm"
-                  onClick={() => onSendEmail(request.id)}
-                  disabled={isSending || isRateLimited}
-                  variant={isRateLimited ? 'secondary' : 'default'}
+                  onClick={onPreview}
+                  disabled={isSending}
                 >
                   {isSending ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-1 animate-spin" />
                       Sending...
                     </>
-                  ) : isRateLimited ? (
-                    <>
-                      <Clock className="h-4 w-4 mr-1" />
-                      Retry later
-                    </>
                   ) : (
                     <>
-                      <Send className="h-4 w-4 mr-1" />
-                      Send Email
+                      <Eye className="h-4 w-4 mr-1" />
+                      Preview and Send
                     </>
                   )}
                 </Button>
@@ -871,10 +892,32 @@ function RequestCard({
                               {email.received_date ? formatDate(email.received_date) : 'Unknown date'}
                             </span>
                           </div>
-                          {email.body_preview && (
-                            <div className="rounded-md bg-background/80 p-3 text-xs text-muted-foreground max-h-40 overflow-y-auto">
-                              {email.body_preview}
+                          {(email.body_preview || email.body_text) ? (
+                            <div className="space-y-2">
+                              <button
+                                type="button"
+                                onClick={() => toggleThreadEmail(email.id)}
+                                aria-expanded={Boolean(expandedThreadEmails[email.id])}
+                                className="w-full text-left"
+                              >
+                                <div
+                                  className={`rounded-md bg-background/80 p-3 text-xs text-muted-foreground ${
+                                    expandedThreadEmails[email.id] ? '' : 'max-h-16 overflow-hidden'
+                                  }`}
+                                >
+                                  {expandedThreadEmails[email.id]
+                                    ? (email.body_text || email.body_preview)
+                                    : email.body_preview || email.body_text}
+                                </div>
+                                <span className="mt-2 inline-flex text-xs text-primary">
+                                  {expandedThreadEmails[email.id] ? 'Hide full message' : 'Show full message'}
+                                </span>
+                              </button>
                             </div>
+                          ) : (
+                            <p className="text-xs text-muted-foreground">
+                              No message content available.
+                            </p>
                           )}
                         </div>
                       )

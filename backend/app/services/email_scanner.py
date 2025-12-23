@@ -83,6 +83,18 @@ class EmailScanner:
             )
 
             if existing:
+                if not existing.body_text:
+                    try:
+                        message = self.gmail_service.get_message(user, message_id)
+                        body_html, body_text = self._extract_body(message)
+                        existing.body_text = body_text or None
+                        if not existing.body_preview:
+                            existing.body_preview = self.detector.get_body_preview(
+                                body_html, body_text
+                            )
+                    except Exception as e:
+                        print(f"Error updating body for received message {message_id}: {str(e)}")
+
                 # If existing scan doesn't have a broker, try to re-match against current broker list
                 # This handles the case where emails were scanned before brokers were added
                 if not existing.broker_id and all_brokers:
@@ -159,6 +171,7 @@ class EmailScanner:
                     confidence_score=confidence,
                     classification_notes=notes,
                     body_preview=body_preview,
+                    body_text=body_text,
                 )
 
                 self.db.add(scan)
@@ -219,6 +232,18 @@ class EmailScanner:
             )
 
             if existing:
+                if not existing.body_text:
+                    try:
+                        message = self.gmail_service.get_message(user, message_id)
+                        body_html, body_text = self._extract_body(message)
+                        existing.body_text = body_text or None
+                        if not existing.body_preview:
+                            existing.body_preview = self.detector.get_body_preview(
+                                body_html, body_text
+                            )
+                    except Exception as e:
+                        print(f"Error updating body for sent message {message_id}: {str(e)}")
+
                 # If existing scan doesn't have a broker, try to re-match against current broker list
                 # This handles the case where emails were scanned before brokers were added
                 if not existing.broker_id and all_brokers:
@@ -307,6 +332,7 @@ class EmailScanner:
                     confidence_score=1.0 if broker else 0.5,
                     classification_notes="Sent to broker domain/privacy email",
                     body_preview=body_preview,
+                    body_text=body_text,
                 )
 
                 self.db.add(scan)
@@ -379,7 +405,7 @@ class EmailScanner:
                 gmail_thread_id=scan.gmail_thread_id,
                 sent_at=sent_at,
                 generated_email_subject=scan.subject,
-                generated_email_body=scan.body_preview,
+                generated_email_body=scan.body_text or scan.body_preview,
             )
 
             self.db.add(request)
@@ -410,7 +436,7 @@ class EmailScanner:
             gmail_thread_id=scan.gmail_thread_id,
             sender_email=scan.sender_email,
             subject=scan.subject,
-            body_text=scan.body_preview,
+            body_text=scan.body_text or scan.body_preview,
             received_date=scan.received_date,
             response_type=response_type,
             confidence_score=confidence,
@@ -565,6 +591,14 @@ class EmailScanner:
             # Multi-part message
             if "parts" in payload:
                 parse_parts(payload["parts"])
+
+        if not body_text and body_html:
+            try:
+                from bs4 import BeautifulSoup
+
+                body_text = BeautifulSoup(body_html, "html.parser").get_text()
+            except Exception:
+                body_text = ""
 
         return body_html, body_text
 

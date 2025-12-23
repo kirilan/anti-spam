@@ -141,6 +141,7 @@ export interface ThreadEmail {
   recipient_email: string | null
   subject: string | null
   body_preview: string | null
+  body_text: string | null
   direction: 'sent' | 'received'
   received_date: string | null
   response_type: BrokerResponseType | null

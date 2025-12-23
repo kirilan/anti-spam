@@ -32,6 +32,7 @@ class EmailScan(Base):
 
     # Email preview
     body_preview = Column(Text, nullable=True)
+    body_text = Column(Text, nullable=True)
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

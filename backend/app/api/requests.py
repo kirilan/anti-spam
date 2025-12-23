@@ -511,6 +511,7 @@ def get_request_thread(
                 recipient_email=scan.recipient_email,
                 subject=scan.subject,
                 body_preview=scan.body_preview,
+                body_text=scan.body_text or scan.body_preview,
                 direction=scan.email_direction,
                 received_date=scan.received_date,
                 response_type=response.response_type.value if response else None,

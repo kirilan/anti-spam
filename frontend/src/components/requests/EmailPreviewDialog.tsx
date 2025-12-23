@@ -9,6 +9,10 @@ import { X, Copy, Check, Loader2, Mail } from 'lucide-react'
 interface EmailPreviewDialogProps {
   request: DeletionRequest | null
   responses: BrokerResponse[]
+  onSend?: () => Promise<void> | void
+  isSending?: boolean
+  sendDisabled?: boolean
+  sendDisabledReason?: string
   onClose: () => void
 }
 
@@ -27,7 +31,15 @@ const responseTypeConfig: Record<BrokerResponseType, { label: string; color: str
   unknown: { label: 'Unknown', color: 'text-gray-600', bg: 'bg-gray-50' },
 }
 
-export function EmailPreviewDialog({ request, responses, onClose }: EmailPreviewDialogProps) {
+export function EmailPreviewDialog({
+  request,
+  responses,
+  onSend,
+  isSending = false,
+  sendDisabled = false,
+  sendDisabledReason,
+  onClose,
+}: EmailPreviewDialogProps) {
   const [email, setEmail] = useState<GeneratedEmail | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -97,6 +109,7 @@ export function EmailPreviewDialog({ request, responses, onClose }: EmailPreview
   const requestMessageStyle = request.sent_at
     ? { label: 'Sent', color: 'text-blue-600', bg: 'bg-blue-50' }
     : { label: 'Draft', color: 'text-yellow-600', bg: 'bg-yellow-50' }
+  const canSend = Boolean(onSend) && request.status === 'pending'
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -281,6 +294,31 @@ export function EmailPreviewDialog({ request, responses, onClose }: EmailPreview
                   <Mail className="h-4 w-4 mr-2" />
                   Open in Email Client
                 </Button>
+                {canSend && (
+                  <div className="flex flex-col items-end">
+                    <Button
+                      onClick={onSend}
+                      disabled={isSending || sendDisabled}
+                    >
+                      {isSending ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          <Mail className="h-4 w-4 mr-2" />
+                          Send Email
+                        </>
+                      )}
+                    </Button>
+                    {sendDisabledReason && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {sendDisabledReason}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           )}
