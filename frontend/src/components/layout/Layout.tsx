@@ -18,7 +18,7 @@ import {
 } from 'lucide-react'
 
 const navItems = [
-  { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/scan', label: 'Scan Emails', icon: ScanSearch },
   { href: '/brokers', label: 'Data Brokers', icon: Database },
   { href: '/requests', label: 'Deletion Requests', icon: FileText },
@@ -62,14 +62,14 @@ export function Layout() {
               isCollapsed ? 'px-0' : 'px-4'
             }`}
           >
-            <div className="flex items-center gap-2 overflow-hidden">
+            <Link to="/" className="flex items-center gap-2 overflow-hidden" aria-label="Go to homepage">
               <img
                 src="/logo-mark.png"
                 alt="OpenShred logo"
                 className="h-8 w-8 shrink-0"
               />
               {!isCollapsed && <span className="text-lg font-semibold">OpenShred</span>}
-            </div>
+            </Link>
             <Button
               variant="ghost"
               size="icon"

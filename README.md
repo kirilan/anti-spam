@@ -5,7 +5,9 @@
 
 A comprehensive web application that scans your Gmail inbox for data broker communications, generates legally compliant deletion requests, and tracks broker responses—all with an intuitive dashboard and powerful analytics.
 
-![OpenShred demo](https://github.com/kirilan/OpenShred/blob/kirilan-asset/anti-spam.gif?raw=true)
+[Live demo](https://app.dimitroff.work)
+
+![OpenShred demo](https://youtu.be/r8Quc-C7IsY?si=45P1UopaH-G_L43D)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/)
