@@ -36,8 +36,14 @@ class EmailScanner:
         # Scan received emails (existing logic)
         received_scans = self._scan_received_emails(user, days_back, max_emails, all_brokers)
 
+        # Flush to database so sent email scan can see these scans
+        self.db.flush()
+
         # Scan sent emails to broker domains (new)
         sent_scans = self._scan_sent_broker_emails(user, days_back, max_emails, all_brokers)
+
+        # Flush again before auto-creation
+        self.db.flush()
 
         # Auto-create deletion requests from ALL discovered broker emails (sent + received)
         all_broker_scans = [s for s in received_scans + sent_scans if s.broker_id]
@@ -383,15 +389,13 @@ class EmailScanner:
             if scan.email_direction == "received" and status != RequestStatus.PENDING:
                 self._create_broker_response_from_scan(request, scan)
 
-    def _create_broker_response_from_scan(
-        self, request: DeletionRequest, scan: EmailScan
-    ) -> None:
+    def _create_broker_response_from_scan(self, request: DeletionRequest, scan: EmailScan) -> None:
         """
         Create a BrokerResponse record from an EmailScan
 
         This links the detected email to the deletion request so it appears in the thread.
         """
-        from app.models.broker_response import BrokerResponse, ResponseType
+        from app.models.broker_response import BrokerResponse
 
         # Classify the response
         response_type, confidence = self.response_detector.detect_response_type(
