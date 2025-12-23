@@ -10,9 +10,80 @@ const supportEmail = import.meta.env.VITE_SUPPORT_EMAIL || 'support@example.com'
 export function PublicHome() {
   const { login } = useLogin()
   const { isAuthenticated } = useAuthStore()
+  const baseUrl = typeof window === 'undefined' ? 'https://app.dimitroff.work' : window.location.origin
+  const faqItems = [
+    {
+      question: 'Is OpenShred free and open source?',
+      answer:
+        'Yes. OpenShred is fully open source, free to use, and offered as-is without guarantees. You can also self-host it for maximum privacy.',
+    },
+    {
+      question: 'Does the app send emails automatically?',
+      answer: 'No. OpenShred drafts deletion requests and only sends them after you approve.',
+    },
+    {
+      question: 'What Gmail access does it need?',
+      answer:
+        'It uses read-only access to identify broker messages and send access to deliver deletion requests you approve.',
+    },
+  ]
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'Organization',
+        '@id': `${baseUrl}/#org`,
+        name: 'OpenShred',
+        url: baseUrl,
+        sameAs: ['https://github.com/kirilan/OpenShred'],
+      },
+      {
+        '@type': 'WebSite',
+        '@id': `${baseUrl}/#website`,
+        name: 'OpenShred',
+        url: baseUrl,
+        description:
+          'OpenShred is an open-source data deletion assistant that scans Gmail, drafts GDPR/CCPA requests, and tracks broker responses.',
+        publisher: { '@id': `${baseUrl}/#org` },
+      },
+      {
+        '@type': 'SoftwareApplication',
+        name: 'OpenShred',
+        applicationCategory: 'SecurityApplication',
+        operatingSystem: 'Web',
+        isAccessibleForFree: true,
+        offers: {
+          '@type': 'Offer',
+          price: '0',
+          priceCurrency: 'USD',
+        },
+        url: baseUrl,
+        description:
+          'Open-source Gmail assistant for identifying data broker emails and sending user-approved deletion requests.',
+        publisher: { '@id': `${baseUrl}/#org` },
+      },
+    ],
+  }
+  const faqStructuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqItems.map((item) => ({
+      '@type': 'Question',
+      name: item.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: item.answer,
+      },
+    })),
+  }
 
   return (
     <div className="min-h-screen bg-background">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqStructuredData) }}
+      />
       <header className="border-b bg-background/80 backdrop-blur">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-6 py-4">
           <div className="flex items-center gap-3">
@@ -158,6 +229,35 @@ export function PublicHome() {
               <CardDescription>Monitors responses and deadlines for follow-ups.</CardDescription>
             </CardHeader>
           </Card>
+        </section>
+
+        <section className="mt-12">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-semibold">FAQ</h2>
+              <p className="text-sm text-muted-foreground">
+                Short answers about privacy, approvals, and self-hosting.
+              </p>
+            </div>
+            <a
+              className="text-sm text-primary hover:underline"
+              href="https://github.com/kirilan/OpenShred"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Explore the source
+            </a>
+          </div>
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            {faqItems.map((item) => (
+              <Card key={item.question}>
+                <CardHeader>
+                  <CardTitle className="text-base">{item.question}</CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm text-muted-foreground">{item.answer}</CardContent>
+              </Card>
+            ))}
+          </div>
         </section>
       </main>
 

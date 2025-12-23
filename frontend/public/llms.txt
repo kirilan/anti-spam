@@ -1,0 +1,10 @@
+# OpenShred
+
+Summary: OpenShred is an open-source data deletion assistant. It connects to Gmail, identifies data broker messages, drafts GDPR/CCPA deletion requests, and tracks responses. Requests are only sent after explicit user approval.
+
+Primary URL: https://app.dimitroff.work
+Privacy: https://app.dimitroff.work/privacy
+Terms: https://app.dimitroff.work/terms
+Source: https://github.com/kirilan/OpenShred
+
+Notes: The service is free to use and provided as-is without guarantees. Users can self-host the project for maximum privacy.
