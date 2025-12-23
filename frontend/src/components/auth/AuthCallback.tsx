@@ -20,7 +20,7 @@ export function AuthCallback() {
 
       try {
         setSession(userId, token)
-        navigate('/', { replace: true })
+        navigate('/dashboard', { replace: true })
       } catch (err) {
         console.error('Auth callback error:', err)
         setError('Authentication failed. Please try again.')

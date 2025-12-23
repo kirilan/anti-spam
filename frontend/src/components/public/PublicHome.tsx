@@ -62,19 +62,31 @@ export function PublicHome() {
               The service is free of charge and provided as-is, without guarantees.
             </p>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Button onClick={login} size="lg" className="shadow-sm">
-                Sign in with Google
-              </Button>
-              <p className="text-xs text-muted-foreground">
-                By continuing, you agree to our{' '}
-                <Link className="text-foreground hover:underline" to="/terms">
-                  Terms
-                </Link>{' '}
-                and{' '}
-                <Link className="text-foreground hover:underline" to="/privacy">
-                  Privacy Policy
+              {isAuthenticated ? (
+                <Link className={buttonVariants({ size: 'lg' })} to="/dashboard">
+                  Open dashboard
                 </Link>
-                .
+              ) : (
+                <Button onClick={login} size="lg" className="shadow-sm">
+                  Sign in with Google
+                </Button>
+              )}
+              <p className="text-xs text-muted-foreground">
+                {isAuthenticated ? (
+                  'You are signed in. Continue to your dashboard to get started.'
+                ) : (
+                  <>
+                    By continuing, you agree to our{' '}
+                    <Link className="text-foreground hover:underline" to="/terms">
+                      Terms
+                    </Link>{' '}
+                    and{' '}
+                    <Link className="text-foreground hover:underline" to="/privacy">
+                      Privacy Policy
+                    </Link>
+                    .
+                  </>
+                )}
               </p>
             </div>
             <div className="rounded-lg border bg-card p-4 text-sm text-muted-foreground">
