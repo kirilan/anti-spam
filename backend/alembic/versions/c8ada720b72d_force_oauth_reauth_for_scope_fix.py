@@ -12,17 +12,16 @@ This is necessary because:
 
 After this migration, users will need to log in again and grant all required permissions.
 """
-from typing import Sequence, Union
+
+from collections.abc import Sequence
 
 from alembic import op
-import sqlalchemy as sa
-
 
 # revision identifiers, used by Alembic.
-revision: str = 'c8ada720b72d'
-down_revision: Union[str, None] = 'c3f7d9a2a1e4'
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+revision: str = "c8ada720b72d"
+down_revision: str | None = "c3f7d9a2a1e4"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:

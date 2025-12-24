@@ -1,5 +1,3 @@
-import os
-
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
@@ -8,7 +6,6 @@ from googleapiclient.errors import HttpError
 # IMPORTANT: Do NOT set OAUTHLIB_RELAX_TOKEN_SCOPE=1 in production
 # This would allow tokens without the required scopes to be accepted
 # os.environ["OAUTHLIB_RELAX_TOKEN_SCOPE"] = "1"
-
 from app.config import settings
 from app.exceptions import GmailQuotaExceededError
 from app.models.user import User

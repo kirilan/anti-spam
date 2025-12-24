@@ -42,7 +42,7 @@ def oauth_callback(code: str, state: str = None, db: Session = Depends(get_db)):
             raise HTTPException(
                 status_code=400,
                 detail=f"Missing required OAuth scopes: {', '.join(missing_scopes)}. "
-                       f"Please re-authenticate and grant all requested permissions."
+                f"Please re-authenticate and grant all requested permissions.",
             )
 
         # Create temporary credentials to get user info
