@@ -29,9 +29,9 @@ def upgrade() -> None:
     # Users will need to log in again after this migration
     op.execute("""
         UPDATE users
-        SET google_access_token = NULL,
-            google_refresh_token = NULL
-        WHERE google_access_token IS NOT NULL
+        SET encrypted_access_token = NULL,
+            encrypted_refresh_token = NULL
+        WHERE encrypted_access_token IS NOT NULL
     """)
 
 
