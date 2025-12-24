@@ -155,13 +155,17 @@ class EmailScanner:
                 # Parse date
                 received_date = self._parse_date(date_str)
 
+                # Determine email direction: check if sender is the user
+                # (emails sent by user appear in inbox if they're part of a thread)
+                email_direction = "sent" if sender_email == user.email else "received"
+
                 # Create scan record
                 scan = EmailScan(
                     user_id=user.id,
                     broker_id=broker.id if broker else None,
                     gmail_message_id=message_id,
                     gmail_thread_id=gmail_thread_id,
-                    email_direction="received",
+                    email_direction=email_direction,
                     sender_email=sender_email,
                     sender_domain=sender_domain,
                     recipient_email=recipient_email,
