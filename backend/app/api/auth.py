@@ -33,6 +33,18 @@ def oauth_callback(code: str, state: str = None, db: Session = Depends(get_db)):
         # Exchange code for tokens
         token_data = gmail_service.exchange_code_for_tokens(code, state)
 
+        # Validate that all required scopes were granted
+        granted_scopes = set(token_data.get("scopes", []))
+        required_scopes = set(gmail_service.SCOPES)
+        missing_scopes = required_scopes - granted_scopes
+
+        if missing_scopes:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Missing required OAuth scopes: {', '.join(missing_scopes)}. "
+                       f"Please re-authenticate and grant all requested permissions."
+            )
+
         # Create temporary credentials to get user info
         from google.oauth2.credentials import Credentials
 

@@ -5,7 +5,9 @@ from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-os.environ["OAUTHLIB_RELAX_TOKEN_SCOPE"] = "1"
+# IMPORTANT: Do NOT set OAUTHLIB_RELAX_TOKEN_SCOPE=1 in production
+# This would allow tokens without the required scopes to be accepted
+# os.environ["OAUTHLIB_RELAX_TOKEN_SCOPE"] = "1"
 
 from app.config import settings
 from app.exceptions import GmailQuotaExceededError
@@ -37,7 +39,11 @@ class GmailService:
             self.client_config, scopes=self.SCOPES, redirect_uri=settings.google_redirect_uri
         )
 
-        authorization_url, state = flow.authorization_url(access_type="offline", prompt="consent")
+        authorization_url, state = flow.authorization_url(
+            access_type="offline",
+            prompt="consent",  # Always show consent screen
+            include_granted_scopes="false",  # Don't use incremental auth
+        )
 
         return authorization_url, state
 
