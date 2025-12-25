@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from uuid import UUID
 
 from sqlalchemy.orm import Session
 
@@ -58,16 +59,20 @@ class DeletionRequestService:
 
     def get_user_requests(self, user_id: str) -> list[DeletionRequest]:
         """Get all active (non-deleted) deletion requests for a user"""
+        # Convert string UUID to UUID object for database query
+        user_uuid = UUID(user_id) if isinstance(user_id, str) else user_id
         return (
             self.db.query(DeletionRequest)
-            .filter(DeletionRequest.user_id == user_id, DeletionRequest.deleted_at.is_(None))
+            .filter(DeletionRequest.user_id == user_uuid, DeletionRequest.deleted_at.is_(None))
             .order_by(DeletionRequest.created_at.desc())
             .all()
         )
 
     def get_request_by_id(self, request_id: str) -> DeletionRequest:
         """Get a specific deletion request"""
-        return self.db.query(DeletionRequest).filter(DeletionRequest.id == request_id).first()
+        # Convert string UUID to UUID object for database query
+        request_uuid = UUID(request_id) if isinstance(request_id, str) else request_id
+        return self.db.query(DeletionRequest).filter(DeletionRequest.id == request_uuid).first()
 
     def update_request_status(
         self, request_id: str, status: RequestStatus, notes: str = None
